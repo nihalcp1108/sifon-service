@@ -67,7 +67,7 @@ export async function getCsrfAndAuth(request) {
     csrfToken: returnedCsrf,
     sessionCookie,
     csrfCookie,
-    cookies: [sessionCookie, `rocoware_csrf=${returnedCsrf}`].filter(Boolean).join('; '),
+    cookies: [sessionCookie, `sifon_csrf=${returnedCsrf}`, `rocoware_csrf=${returnedCsrf}`].filter(Boolean).join('; '),
     admin: loginRes.body.data?.admin,
   };
 }

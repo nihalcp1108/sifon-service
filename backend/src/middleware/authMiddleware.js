@@ -3,7 +3,11 @@ import { validateSessionToken } from '../services/authService.js';
 
 export async function requireAuth(req, res, next) {
   try {
-    const rawToken = req.cookies[config.session.cookieName];
+    const rawToken = req.cookies?.[config.session.cookieName]
+      || req.cookies?.['sifon-service']
+      || req.cookies?.['sifon_service_session']
+      || req.cookies?.['rocoware_session'];
+
     if (!rawToken) {
       return res.status(401).json({
         success: false,

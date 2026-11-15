@@ -15,9 +15,48 @@ for (const envPath of candidateEnvPaths) {
   dotenv.config({ path: envPath });
 }
 
+function parseBoolean(val, defaultVal) {
+  if (val === undefined || val === null || val === '') return defaultVal;
+  const str = String(val).trim().toLowerCase();
+  if (str === 'true' || str === '1') return true;
+  if (str === 'false' || str === '0') return false;
+  return defaultVal;
+}
+
+function parseSameSite(val) {
+  if (!val) return 'lax';
+  const str = String(val).trim().toLowerCase();
+  if (['lax', 'strict', 'none'].includes(str)) return str;
+  return 'lax';
+}
+
+function parseTrustProxy(val, isProd) {
+  if (val === undefined || val === null || val === '') {
+    return isProd ? 1 : 0;
+  }
+  const str = String(val).trim().toLowerCase();
+  if (str === 'true') return 1;
+  if (str === 'false') return 0;
+  const num = parseInt(str, 10);
+  if (!isNaN(num)) return num;
+  return val;
+}
+
 const nodeEnv = process.env.NODE_ENV || 'development';
 const isProd = nodeEnv === 'production';
 const isTest = nodeEnv === 'test';
+
+const sameSiteValue = parseSameSite(process.env.COOKIE_SAME_SITE);
+const cookieSecureValue = sameSiteValue === 'none' ? true : parseBoolean(process.env.COOKIE_SECURE, isProd);
+
+const rawClientUrl = (process.env.CLIENT_URL || 'http://localhost:5173').trim().replace(/\/+$/, '');
+const corsList = (process.env.CORS_ORIGINS || process.env.CLIENT_URL || 'http://localhost:5173')
+  .split(',')
+  .map(origin => origin.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
+if (rawClientUrl && !corsList.includes(rawClientUrl)) {
+  corsList.push(rawClientUrl);
+}
 
 export const config = {
   appName: 'sifon-service',
@@ -25,20 +64,17 @@ export const config = {
   isProd,
   isTest,
   port: parseInt(process.env.PORT || '5002', 10),
-  mongoUri: process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/rocoware',
-  clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
-  corsOrigins: (process.env.CORS_ORIGINS || process.env.CLIENT_URL || 'http://localhost:5173')
-    .split(',')
-    .map(origin => origin.trim())
-    .filter(Boolean),
+  mongoUri: process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/sifon-service',
+  clientUrl: rawClientUrl,
+  corsOrigins: corsList,
   session: {
-    cookieName: process.env.SESSION_COOKIE_NAME || 'rocoware_session',
+    cookieName: (process.env.SESSION_COOKIE_NAME || 'sifon-service').trim(),
     ttlDays: parseInt(process.env.SESSION_TTL_DAYS || '7', 10),
-    secure: process.env.COOKIE_SECURE === 'true' || isProd,
-    sameSite: (process.env.COOKIE_SAME_SITE || 'lax').toLowerCase(),
-    domain: process.env.COOKIE_DOMAIN || undefined,
+    secure: cookieSecureValue,
+    sameSite: sameSiteValue,
+    domain: process.env.COOKIE_DOMAIN?.trim() || undefined,
   },
-  trustProxy: parseInt(process.env.TRUST_PROXY || '0', 10),
+  trustProxy: parseTrustProxy(process.env.TRUST_PROXY, isProd),
   csrfSecret: process.env.CSRF_SECRET || 'sifon_service_csrf_secret_key',
   storage: {
     driver: (process.env.UPLOAD_DRIVER || 'local').toLowerCase().trim(),

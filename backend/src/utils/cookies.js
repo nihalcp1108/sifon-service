@@ -20,11 +20,18 @@ export function getSessionCookieOptions(expiresAt) {
 }
 
 export function setSessionCookie(res, token, expiresAt) {
-  res.cookie(config.session.cookieName, token, getSessionCookieOptions(expiresAt));
+  const options = getSessionCookieOptions(expiresAt);
+  res.cookie(config.session.cookieName, token, options);
 }
 
 export function clearSessionCookie(res) {
   const options = getSessionCookieOptions();
   res.clearCookie(config.session.cookieName, options);
+  if (config.session.cookieName !== 'sifon-service') {
+    res.clearCookie('sifon-service', options);
+  }
+  if (config.session.cookieName !== 'rocoware_session') {
+    res.clearCookie('rocoware_session', options);
+  }
 }
 

@@ -2,8 +2,11 @@ import axios from 'axios';
 
 let csrfToken = null;
 
+const rawBaseUrl = import.meta.env.VITE_API_URL || '/api';
+const normalizedBaseUrl = rawBaseUrl.endsWith('/') ? rawBaseUrl.slice(0, -1) : rawBaseUrl;
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: normalizedBaseUrl,
   withCredentials: true,
   headers: {
     'Accept': 'application/json',
@@ -16,14 +19,14 @@ export function setCachedCsrfToken(token) {
 
 export function getCachedCsrfToken() {
   if (csrfToken) return csrfToken;
-  // Fallback to cookie
-  const match = document.cookie.match(new RegExp('(^|;\\s*)rocoware_csrf=([^;]+)'));
-  return match ? decodeURIComponent(match[2]) : null;
+  // Fallback to cookie (supporting both current sifon_csrf and legacy rocoware_csrf)
+  const match = document.cookie.match(new RegExp('(^|;\\s*)(sifon_csrf|rocoware_csrf)=([^;]+)'));
+  return match ? decodeURIComponent(match[3]) : null;
 }
 
 export async function fetchCsrfToken() {
   try {
-    const res = await axios.get(`${import.meta.env.VITE_API_URL || '/api'}/auth/csrf`, {
+    const res = await axios.get(`${normalizedBaseUrl}/auth/csrf`, {
       withCredentials: true,
     });
     if (res.data?.data?.csrfToken) {

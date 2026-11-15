@@ -1,20 +1,27 @@
 import crypto from 'crypto';
 import { config } from '../config/env.js';
 
-const CSRF_COOKIE_NAME = 'rocoware_csrf';
+export const CSRF_COOKIE_NAME = process.env.CSRF_COOKIE_NAME || 'sifon_csrf';
 
 export function generateCsrfToken() {
   return crypto.randomBytes(24).toString('hex');
 }
 
 export function setCsrfCookie(res, token) {
-  res.cookie(CSRF_COOKIE_NAME, token, {
+  const options = {
     httpOnly: false, // Frontend JavaScript needs to read this or receive from /api/auth/csrf
     secure: config.session.secure,
     sameSite: config.session.sameSite,
     path: '/',
-    domain: config.session.domain,
-  });
+  };
+
+  if (config.session.domain) {
+    options.domain = config.session.domain;
+  }
+
+  res.cookie(CSRF_COOKIE_NAME, token, options);
+  // Also set legacy cookie name for backwards compatibility
+  res.cookie('rocoware_csrf', token, options);
 }
 
 export function csrfProtection(req, res, next) {
@@ -30,6 +37,7 @@ export function csrfProtection(req, res, next) {
   if (origin) {
     const isAllowedOrigin = config.corsOrigins.some(allowed => {
       try {
+        if (allowed === '*' || allowed === origin) return true;
         const allowedUrl = new URL(allowed);
         const originUrl = new URL(origin);
         return allowedUrl.origin === originUrl.origin;
@@ -38,11 +46,13 @@ export function csrfProtection(req, res, next) {
       }
     });
 
-    // In dev, also allow if host matches
+    // In dev or reverse-proxy deployments, also allow if host or x-forwarded-host matches
     const hostHeader = req.headers.host;
-    const isHostMatch = origin.includes(hostHeader);
+    const forwardedHost = req.headers['x-forwarded-host'];
+    const isHostMatch = hostHeader && origin.includes(hostHeader);
+    const isForwardedHostMatch = forwardedHost && origin.includes(forwardedHost);
 
-    if (!isAllowedOrigin && !isHostMatch && config.isProd) {
+    if (!isAllowedOrigin && !isHostMatch && !isForwardedHostMatch && config.isProd) {
       return res.status(403).json({
         success: false,
         error: {
@@ -55,7 +65,7 @@ export function csrfProtection(req, res, next) {
 
   // Verify CSRF token from header vs cookie
   const tokenFromHeader = req.headers['x-csrf-token'];
-  const tokenFromCookie = req.cookies[CSRF_COOKIE_NAME];
+  const tokenFromCookie = req.cookies?.[CSRF_COOKIE_NAME] || req.cookies?.['sifon_csrf'] || req.cookies?.['rocoware_csrf'];
 
   // If testing or CSRF token is provided, verify match
   if (!tokenFromHeader || !tokenFromCookie || tokenFromHeader !== tokenFromCookie) {

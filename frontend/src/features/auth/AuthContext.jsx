@@ -39,18 +39,43 @@ export function AuthProvider({ children }) {
   }, [checkAuth]);
 
   const login = async (email, password) => {
+    setIsLoading(true);
+    setAuthError(null);
     try {
       const res = await api.post('/auth/login', { email, password });
-      if (res.data?.success) {
-        const { admin: userAdmin, csrfToken } = res.data.data;
-        if (csrfToken) {
-          setCachedCsrfToken(csrfToken);
-        }
-        setAdmin(userAdmin);
-        return { success: true };
+      if (!res.data?.success) {
+        setIsLoading(false);
+        return { success: false, error: 'Login failed' };
       }
-      return { success: false, error: 'Login failed' };
+
+      const { csrfToken } = res.data.data || {};
+      if (csrfToken) {
+        setCachedCsrfToken(csrfToken);
+      }
+
+      // Keep frontend in loading state and verify session cookie transmission with /auth/me
+      // Never consider authenticated solely because /auth/login returned 200
+      try {
+        const verifyRes = await api.get('/auth/me');
+        if (verifyRes.data?.success && verifyRes.data?.data?.admin) {
+          setAdmin(verifyRes.data.data.admin);
+          setIsLoading(false);
+          return { success: true };
+        } else {
+          throw new Error('Session verification returned invalid payload');
+        }
+      } catch (verifyErr) {
+        console.error('Session verification via /auth/me failed after login:', verifyErr);
+        setAdmin(null);
+        setIsLoading(false);
+        const is401 = verifyErr.response?.status === 401;
+        const msg = is401
+          ? 'Browser session cookie was not retained or transmitted. If accessing across domains, please ensure third-party cookies are allowed or configure the same-origin /api proxy.'
+          : (verifyErr.response?.data?.error?.message || 'Session verification failed after login.');
+        return { success: false, error: msg };
+      }
     } catch (err) {
+      setIsLoading(false);
       const msg = err.response?.data?.error?.message || 'Login failed. Please check your credentials.';
       return { success: false, error: msg };
     }
