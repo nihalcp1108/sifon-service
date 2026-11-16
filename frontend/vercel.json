@@ -1,8 +1,19 @@
 {
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, no-cache, must-revalidate, proxy-revalidate"
+        }
+      ]
+    }
+  ],
   "rewrites": [
     {
-      "source": "/api/:match*",
-      "destination": "https://sifon-service-production.up.railway.app/api/:match*"
+      "source": "/api/:path*",
+      "destination": "https://sifon-service-production.up.railway.app/api/:path*"
     },
     {
       "source": "/(.*)",
@@ -10,4 +21,3 @@
     }
   ]
 }
-

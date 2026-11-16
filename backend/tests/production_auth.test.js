@@ -189,5 +189,40 @@ describe('Production Session Authentication & Protected Endpoints', () => {
       .set('Cookie', auth.cookies);
     assert.equal(res.status, 200);
   });
+
+  it('refresh preserves login across repeated requests with the same session cookie', async () => {
+    const auth = await getCsrfAndAuth(request);
+
+    // Simulate page refresh: first calls /auth/me, then /dashboard, then /complaints
+    const meRes = await request(app)
+      .get('/api/auth/me')
+      .set('Cookie', auth.cookies);
+    assert.equal(meRes.status, 200);
+    assert.equal(meRes.body.data.admin.email, TEST_ADMIN.email);
+
+    const dashboardRes = await request(app)
+      .get('/api/dashboard')
+      .set('Cookie', auth.cookies);
+    assert.equal(dashboardRes.status, 200);
+
+    const complaintsRes = await request(app)
+      .get('/api/complaints')
+      .set('Cookie', auth.cookies);
+    assert.equal(complaintsRes.status, 200);
+  });
+
+  it('CSRF-protected mutations succeed when both cookie and header are provided', async () => {
+    const auth = await getCsrfAndAuth(request);
+
+    const res = await request(app)
+      .patch('/api/admin/profile')
+      .set('Cookie', auth.cookies)
+      .set('X-CSRF-Token', auth.csrfToken)
+      .send({ name: 'Admin Name Updated' });
+
+    assert.equal(res.status, 200);
+    assert.equal(res.body.success, true);
+    assert.equal(res.body.data.admin.name, 'Admin Name Updated');
+  });
 });
 

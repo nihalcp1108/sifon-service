@@ -1,7 +1,7 @@
 import { Admin } from '../models/Admin.js';
 import { createSession, revokeSession } from '../services/authService.js';
 import { setSessionCookie, clearSessionCookie } from '../utils/cookies.js';
-import { generateCsrfToken, setCsrfCookie } from '../middleware/csrfMiddleware.js';
+import { generateCsrfToken, setCsrfCookie, clearCsrfCookie } from '../middleware/csrfMiddleware.js';
 import { loginSchema } from '../validators/schemas.js';
 
 export async function getCsrf(req, res) {
@@ -77,6 +77,7 @@ export async function logout(req, res, next) {
       await revokeSession(req.sessionToken);
     }
     clearSessionCookie(res);
+    clearCsrfCookie(res);
     res.json({
       success: true,
       message: 'Logged out successfully'

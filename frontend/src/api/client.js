@@ -2,7 +2,21 @@ import axios from 'axios';
 
 let csrfToken = null;
 
-const rawBaseUrl = import.meta.env.VITE_API_URL || '/api';
+// Determine same-origin baseURL:
+// Default to /api for same-origin proxying through Vercel (or Vite proxy in dev)
+let rawBaseUrl = import.meta.env.VITE_API_URL || '/api';
+
+// If an external backend origin (like Railway) was passed in the browser build,
+// normalize to same-origin /api to ensure first-party cookie handling
+if (typeof window !== 'undefined' && (rawBaseUrl.includes('railway.app') || rawBaseUrl.startsWith('http://') || rawBaseUrl.startsWith('https://'))) {
+  try {
+    const parsed = new URL(rawBaseUrl, window.location.origin);
+    rawBaseUrl = parsed.pathname.startsWith('/api') ? parsed.pathname : '/api';
+  } catch {
+    rawBaseUrl = '/api';
+  }
+}
+
 const normalizedBaseUrl = rawBaseUrl.endsWith('/') ? rawBaseUrl.slice(0, -1) : rawBaseUrl;
 
 export const api = axios.create({
@@ -28,6 +42,9 @@ export async function fetchCsrfToken() {
   try {
     const res = await axios.get(`${normalizedBaseUrl}/auth/csrf`, {
       withCredentials: true,
+      headers: {
+        'Accept': 'application/json',
+      },
     });
     if (res.data?.data?.csrfToken) {
       csrfToken = res.data.data.csrfToken;
@@ -39,8 +56,17 @@ export async function fetchCsrfToken() {
   }
 }
 
-// Request interceptor to attach CSRF token for mutating requests
+// Request interceptor to attach CSRF token and prevent duplicate /api prefix
 api.interceptors.request.use(async (config) => {
+  // Prevent duplicate /api segment if url was passed starting with /api/
+  if (config.url && config.baseURL && (config.baseURL === '/api' || config.baseURL.endsWith('/api'))) {
+    if (config.url.startsWith('/api/')) {
+      config.url = config.url.replace(/^\/api/, '');
+    } else if (config.url === '/api') {
+      config.url = '/';
+    }
+  }
+
   const method = config.method?.toUpperCase();
   if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
     let token = getCachedCsrfToken();

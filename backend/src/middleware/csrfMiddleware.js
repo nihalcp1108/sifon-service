@@ -24,6 +24,22 @@ export function setCsrfCookie(res, token) {
   res.cookie('rocoware_csrf', token, options);
 }
 
+export function clearCsrfCookie(res) {
+  const options = {
+    httpOnly: false,
+    secure: config.session.secure,
+    sameSite: config.session.sameSite,
+    path: '/',
+  };
+
+  if (config.session.domain) {
+    options.domain = config.session.domain;
+  }
+
+  res.clearCookie(CSRF_COOKIE_NAME, options);
+  res.clearCookie('rocoware_csrf', options);
+}
+
 export function csrfProtection(req, res, next) {
   // Allow safe HTTP methods
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
@@ -46,13 +62,20 @@ export function csrfProtection(req, res, next) {
       }
     });
 
-    // In dev or reverse-proxy deployments, also allow if host or x-forwarded-host matches
-    const hostHeader = req.headers.host;
-    const forwardedHost = req.headers['x-forwarded-host'];
-    const isHostMatch = hostHeader && origin.includes(hostHeader);
-    const isForwardedHostMatch = forwardedHost && origin.includes(forwardedHost);
+    // In direct same-origin requests, verify if origin matches current host header
+    if (!isAllowedOrigin) {
+      try {
+        const originUrl = new URL(origin);
+        const hostHeader = req.get('host');
+        if (hostHeader && originUrl.host === hostHeader) {
+          isAllowedOrigin = true;
+        }
+      } catch {
+        // ignore invalid URL parsing
+      }
+    }
 
-    if (!isAllowedOrigin && !isHostMatch && !isForwardedHostMatch && config.isProd) {
+    if (!isAllowedOrigin && config.isProd) {
       return res.status(403).json({
         success: false,
         error: {
