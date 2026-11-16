@@ -38,6 +38,7 @@ describe('Attachment Security, Uploads & Downloads', () => {
         productName: 'Rocoware Pro',
         subject: 'Testing file uploads',
         description: 'Verifying attachment security and streaming download',
+        representative: setup.rep._id.toString(),
       });
 
     complaintId = createRes.body.data._id;

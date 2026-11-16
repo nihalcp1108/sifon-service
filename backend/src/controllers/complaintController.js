@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import path from 'path';
 import { Complaint, COMPLETED_STATUSES, ACTIVE_STATUSES } from '../models/Complaint.js';
 import { Servicer } from '../models/Servicer.js';
+import { Representative } from '../models/Representative.js';
 import { Brand } from '../models/Brand.js';
 import { Category } from '../models/Category.js';
 import {
@@ -39,6 +40,7 @@ function buildComplaintQuery(params) {
     status,
     priority,
     servicer,
+    representative,
     brand,
     category,
     area,
@@ -92,9 +94,24 @@ function buildComplaintQuery(params) {
   // Servicer filter
   if (servicer && servicer !== 'all') {
     if (servicer === 'unassigned') {
-      query.$or = [{ assignedServicer: null }, { assignedServicer: { $exists: false } }];
+      if (!query.$and) query.$and = [];
+      query.$and.push({
+        $or: [{ assignedServicer: null }, { assignedServicer: { $exists: false } }]
+      });
     } else if (mongoose.Types.ObjectId.isValid(servicer)) {
       query.assignedServicer = new mongoose.Types.ObjectId(servicer);
+    }
+  }
+
+  // Representative filter
+  if (representative && representative !== 'all') {
+    if (representative === 'unassigned') {
+      if (!query.$and) query.$and = [];
+      query.$and.push({
+        $or: [{ representative: null }, { representative: { $exists: false } }]
+      });
+    } else if (mongoose.Types.ObjectId.isValid(representative)) {
+      query.representative = new mongoose.Types.ObjectId(representative);
     }
   }
 
@@ -216,6 +233,7 @@ export async function getComplaints(req, res, next) {
         .skip((pageNum - 1) * limitNum)
         .limit(limitNum)
         .populate('assignedServicer', 'name phone email isActive')
+        .populate('representative', 'name phone email isActive')
         .populate('brand', 'name isActive')
         .populate('category', 'name isActive')
         .lean(),
@@ -312,6 +330,29 @@ export async function createComplaint(req, res, next) {
       }
     }
 
+    // Validate Representative (Registered by) - Required for new complaints
+    let repDoc = null;
+    if (data.representative) {
+      repDoc = await Representative.findById(data.representative);
+      if (!repDoc) {
+        return res.status(400).json({
+          success: false,
+          error: { code: 'INVALID_REPRESENTATIVE', message: 'Selected representative not found' }
+        });
+      }
+      if (!repDoc.isActive) {
+        return res.status(400).json({
+          success: false,
+          error: { code: 'INACTIVE_REPRESENTATIVE', message: 'Cannot select an inactive representative for new complaints' }
+        });
+      }
+    } else {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'REPRESENTATIVE_REQUIRED', message: 'Registered by (REP) is required for new complaints.' }
+      });
+    }
+
     // Validate servicer if specified
     let servicerDoc = null;
     if (data.assignedServicer) {
@@ -391,6 +432,8 @@ export async function createComplaint(req, res, next) {
       categoryNameSnapshot: categoryDoc ? categoryDoc.name : 'Not assigned',
       assignedServicer: servicerDoc ? servicerDoc._id : undefined,
       servicerNameSnapshot: servicerDoc ? servicerDoc.name : '',
+      representative: repDoc ? repDoc._id : undefined,
+      representativeNameSnapshot: repDoc ? repDoc.name : '',
       attachments,
       timeline: [
         {
@@ -442,6 +485,8 @@ export async function createComplaint(req, res, next) {
       }
     }
 
+    await complaint.populate('brand category assignedServicer representative');
+
     res.status(201).json({
       success: true,
       message: `Complaint ${trimmedId} registered successfully`,
@@ -477,6 +522,7 @@ export async function getComplaintById(req, res, next) {
 
     const complaint = await Complaint.findById(id)
       .populate('assignedServicer', 'name phone email serviceArea specialization isActive')
+      .populate('representative', 'name phone email isActive')
       .populate('brand', 'name description isActive')
       .populate('category', 'name description isActive')
       .populate('whatsappNotification.notificationId')
@@ -569,6 +615,37 @@ export async function updateComplaint(req, res, next) {
       }
     }
 
+    // Representative update
+    if (data.representative !== undefined) {
+      if (data.representative) {
+        if (!complaint.representative || complaint.representative.toString() !== data.representative) {
+          const rep = await Representative.findById(data.representative);
+          if (!rep) {
+            return res.status(400).json({
+              success: false,
+              error: { code: 'INVALID_REPRESENTATIVE', message: 'Assigned representative not found' }
+            });
+          }
+          if (!rep.isActive) {
+            return res.status(400).json({
+              success: false,
+              error: { code: 'INACTIVE_REPRESENTATIVE', message: 'Cannot assign an inactive representative' }
+            });
+          }
+          const oldRepName = complaint.representativeNameSnapshot || 'Not assigned';
+          complaint.representative = rep._id;
+          complaint.representativeNameSnapshot = rep.name;
+          timelineChanges.push(`Representative updated from "${oldRepName}" to "${rep.name}"`);
+        }
+      } else {
+        const oldRepName = complaint.representativeNameSnapshot || 'Not assigned';
+        complaint.representative = undefined;
+        complaint.representativeNameSnapshot = '';
+        timelineChanges.push(`Representative "${oldRepName}" unassigned`);
+      }
+      delete data.representative;
+    }
+
     // Prevent changing complaintNumber after creation
     delete data.complaintNumber;
 
@@ -586,7 +663,7 @@ export async function updateComplaint(req, res, next) {
     }
 
     await complaint.save();
-    await complaint.populate('assignedServicer brand category');
+    await complaint.populate('assignedServicer brand category representative');
 
     res.json({
       success: true,
@@ -712,7 +789,7 @@ export async function updateComplaintStatus(req, res, next) {
     });
 
     await complaint.save();
-    await complaint.populate('assignedServicer brand category');
+    await complaint.populate('assignedServicer brand category representative');
 
     res.json({
       success: true,
@@ -794,7 +871,7 @@ export async function updateComplaintAssignment(req, res, next) {
     });
 
     await complaint.save();
-    await complaint.populate('assignedServicer brand category');
+    await complaint.populate('assignedServicer brand category representative');
 
     res.json({
       success: true,
@@ -942,7 +1019,7 @@ export async function completeComplaintService(req, res, next) {
     complaint.version += 1;
 
     await complaint.save();
-    await complaint.populate('assignedServicer brand category');
+    await complaint.populate('assignedServicer brand category representative');
 
     res.json({
       success: true,
@@ -1196,6 +1273,7 @@ export async function getIndividualComplaintPDF(req, res, next) {
 
     const complaint = await Complaint.findById(id)
       .populate('assignedServicer')
+      .populate('representative', 'name phone email')
       .populate('brand', 'name')
       .populate('category', 'name');
 
@@ -1258,9 +1336,16 @@ export async function exportComplaintsPDF(req, res, next) {
       .sort(sortOption)
       .limit(2000)
       .populate('assignedServicer', 'name')
+      .populate('representative', 'name')
       .populate('brand', 'name')
       .populate('category', 'name')
       .lean();
+
+    let representativeName = '';
+    if (req.query.representative && req.query.representative !== 'all' && req.query.representative !== 'unassigned') {
+      const rep = await Representative.findById(req.query.representative).select('name').lean();
+      if (rep) representativeName = rep.name;
+    }
 
     let servicerName = '';
     if (req.query.servicer && req.query.servicer !== 'all' && req.query.servicer !== 'unassigned') {
@@ -1287,6 +1372,7 @@ export async function exportComplaintsPDF(req, res, next) {
       brandName: brandName || null,
       categoryName: categoryName || null,
       servicerName: servicerName || (req.query.servicer === 'unassigned' ? 'Unassigned' : null),
+      representativeName: representativeName || (req.query.representative === 'unassigned' ? 'Not assigned' : null),
       search: req.query.search || null,
       startDate: req.query.startDate || null,
       endDate: req.query.endDate || null,

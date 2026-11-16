@@ -130,11 +130,14 @@ export function generateComplaintPDF(complaint, imageBuffers = {}) {
   }
 
   // --- Status & Assignment Overview ---
-  y = renderSectionHeader('Status & Priority', y);
-  renderKV('Current Status', complaint.status, 40, y);
-  renderKV('Priority', (complaint.priority || '').toUpperCase(), 180, y);
-  renderKV('Assigned Servicer', complaint.assignedServicer?.name || complaint.servicerNameSnapshot || 'Unassigned', 320, y);
-  renderKV('Scheduled Date', formatKolkataDateTime(complaint.scheduledServiceDate), 450, y, 105);
+  y = renderSectionHeader('Status & Assignment', y);
+  renderKV('Current Status', complaint.status, 40, y, 120);
+  renderKV('Priority', (complaint.priority || '').toUpperCase(), 170, y, 100);
+  renderKV('Assigned Servicer', complaint.assignedServicer?.name || complaint.servicerNameSnapshot || 'Unassigned', 280, y, 130);
+  renderKV('Registered by (REP)', complaint.representative?.name || complaint.representativeNameSnapshot || 'Not assigned', 420, y, 135);
+  y += 30;
+  renderKV('Scheduled Date', formatKolkataDateTime(complaint.scheduledServiceDate), 40, y, 200);
+  renderKV('Registration Date', formatKolkataDateTime(complaint.complaintDate), 280, y, 200);
   y += 35;
 
   // --- Customer Information ---
@@ -359,29 +362,31 @@ export function generateComplaintReportPDF(complaints, filterSummary = {}) {
 
   // Printable width for landscape A4 = ~800, margin 20
   const defaultColWidths = {
-    num: 85,
+    num: 75,
     date: 65,
-    customer: 85,
-    phone: 70,
-    brand: 75,
-    category: 75,
-    product: 80,
-    area: 70,
-    servicer: 80,
-    priority: 55,
+    customer: 75,
+    phone: 65,
+    brand: 65,
+    category: 65,
+    product: 70,
+    area: 60,
+    rep: 70,
+    servicer: 75,
+    priority: 50,
     status: 60,
   };
 
   const completedColWidths = {
-    num: 85,
-    regDate: 65,
-    customer: 85,
-    phone: 75,
-    brandProduct: 95,
-    servicer: 85,
-    compDate: 75,
-    charge: 70,
-    status: 60,
+    num: 75,
+    regDate: 60,
+    customer: 75,
+    phone: 65,
+    brandProduct: 85,
+    rep: 70,
+    servicer: 75,
+    compDate: 70,
+    charge: 65,
+    status: 55,
     work: 105,
   };
 
@@ -411,6 +416,7 @@ export function generateComplaintReportPDF(complaints, filterSummary = {}) {
   if (filterSummary.priority) filterParts.push(`Priority: ${filterSummary.priority}`);
   if (filterSummary.area) filterParts.push(`Area: ${filterSummary.area}`);
   if (filterSummary.servicerName) filterParts.push(`Servicer: ${filterSummary.servicerName}`);
+  if (filterSummary.representativeName) filterParts.push(`REP: ${filterSummary.representativeName}`);
   if (filterSummary.search) filterParts.push(`Search: "${filterSummary.search}"`);
   if (filterSummary.startDate || filterSummary.endDate) {
     filterParts.push(`Date: ${filterSummary.startDate || 'start'} to ${filterSummary.endDate || 'now'}`);
@@ -450,6 +456,7 @@ export function generateComplaintReportPDF(complaints, filterSummary = {}) {
           { text: 'Customer', width: colWidths.customer },
           { text: 'Phone', width: colWidths.phone },
           { text: 'Brand / Product', width: colWidths.brandProduct },
+          { text: 'REP', width: colWidths.rep },
           { text: 'Serviced By', width: colWidths.servicer },
           { text: 'Completion Date', width: colWidths.compDate },
           { text: 'Charge (INR)', width: colWidths.charge },
@@ -465,6 +472,7 @@ export function generateComplaintReportPDF(complaints, filterSummary = {}) {
           { text: 'Category', width: colWidths.category },
           { text: 'Product', width: colWidths.product },
           { text: 'Area', width: colWidths.area },
+          { text: 'REP', width: colWidths.rep },
           { text: 'Servicer', width: colWidths.servicer },
           { text: 'Priority', width: colWidths.priority },
           { text: 'Status', width: colWidths.status },
@@ -507,6 +515,7 @@ export function generateComplaintReportPDF(complaints, filterSummary = {}) {
       let x = 23;
 
       const servicerDisplay = c.assignedServicer?.name || c.servicerNameSnapshot || 'Unassigned';
+      const repDisplay = c.representative?.name || c.representativeNameSnapshot || 'Not assigned';
       const brandDisplay = c.brand?.name || c.brandNameSnapshot || 'Not assigned';
       const categoryDisplay = c.category?.name || c.categoryNameSnapshot || 'Not assigned';
 
@@ -525,6 +534,7 @@ export function generateComplaintReportPDF(complaints, filterSummary = {}) {
           { text: c.customerName, width: colWidths.customer },
           { text: c.customerPhone, width: colWidths.phone },
           { text: `${brandDisplay} - ${c.productName}`, width: colWidths.brandProduct },
+          { text: repDisplay, width: colWidths.rep },
           { text: servicerDisplay, width: colWidths.servicer },
           { text: compDateStr, width: colWidths.compDate },
           { text: chargeNum.toFixed(2), width: colWidths.charge },
@@ -541,6 +551,7 @@ export function generateComplaintReportPDF(complaints, filterSummary = {}) {
           { text: categoryDisplay, width: colWidths.category },
           { text: c.productName, width: colWidths.product },
           { text: c.area, width: colWidths.area },
+          { text: repDisplay, width: colWidths.rep },
           { text: servicerDisplay, width: colWidths.servicer },
           { text: (c.priority || '').toUpperCase(), width: colWidths.priority },
           { text: c.status, width: colWidths.status },

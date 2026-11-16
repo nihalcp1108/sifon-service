@@ -41,6 +41,7 @@ export function ComplaintsListPage() {
 
   const [complaints, setComplaints] = useState([]);
   const [servicers, setServicers] = useState([]);
+  const [representatives, setRepresentatives] = useState([]);
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
   const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 10, totalPages: 1 });
@@ -56,6 +57,7 @@ export function ComplaintsListPage() {
   const [status, setStatus] = useState(searchParams.get('status') || 'all');
   const [priority, setPriority] = useState(searchParams.get('priority') || 'all');
   const [servicer, setServicer] = useState(searchParams.get('servicer') || 'all');
+  const [representative, setRepresentative] = useState(searchParams.get('representative') || 'all');
   const [brand, setBrand] = useState(searchParams.get('brand') || 'all');
   const [category, setCategory] = useState(searchParams.get('category') || 'all');
   const [area, setArea] = useState(searchParams.get('area') || '');
@@ -79,6 +81,12 @@ export function ComplaintsListPage() {
       })
       .catch(() => {});
 
+    api.get('/representatives')
+      .then((res) => {
+        if (res.data?.success) setRepresentatives(res.data.data);
+      })
+      .catch(() => {});
+
     api.get('/brands')
       .then((res) => {
         if (res.data?.success) setBrands(res.data.data);
@@ -99,6 +107,7 @@ export function ComplaintsListPage() {
     if (newParams.status && newParams.status !== 'all') params.set('status', newParams.status);
     if (newParams.priority && newParams.priority !== 'all') params.set('priority', newParams.priority);
     if (newParams.servicer && newParams.servicer !== 'all') params.set('servicer', newParams.servicer);
+    if (newParams.representative && newParams.representative !== 'all') params.set('representative', newParams.representative);
     if (newParams.brand && newParams.brand !== 'all') params.set('brand', newParams.brand);
     if (newParams.category && newParams.category !== 'all') params.set('category', newParams.category);
     if (newParams.area) params.set('area', newParams.area);
@@ -123,6 +132,7 @@ export function ComplaintsListPage() {
         status: status !== 'all' ? status : undefined,
         priority: priority !== 'all' ? priority : undefined,
         servicer: servicer !== 'all' ? servicer : undefined,
+        representative: representative !== 'all' ? representative : undefined,
         brand: brand !== 'all' ? brand : undefined,
         category: category !== 'all' ? category : undefined,
         area: area.trim() || undefined,
@@ -143,12 +153,12 @@ export function ComplaintsListPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [page, search, status, priority, servicer, brand, category, area, startDate, endDate, isArchived, sortBy, sortOrder]);
+  }, [page, search, status, priority, servicer, representative, brand, category, area, startDate, endDate, isArchived, sortBy, sortOrder]);
 
   useEffect(() => {
     fetchComplaints();
-    updateUrlParams({ search, status, priority, servicer, brand, category, area, startDate, endDate, isArchived, sortBy, sortOrder, page });
-  }, [fetchComplaints, updateUrlParams, search, status, priority, servicer, brand, category, area, startDate, endDate, isArchived, sortBy, sortOrder, page]);
+    updateUrlParams({ search, status, priority, servicer, representative, brand, category, area, startDate, endDate, isArchived, sortBy, sortOrder, page });
+  }, [fetchComplaints, updateUrlParams, search, status, priority, servicer, representative, brand, category, area, startDate, endDate, isArchived, sortBy, sortOrder, page]);
 
   // Synchronize immediately when service is completed or status changes without reloading browser
   useEffect(() => {
@@ -165,6 +175,7 @@ export function ComplaintsListPage() {
     setStatus('all');
     setPriority('all');
     setServicer('all');
+    setRepresentative('all');
     setBrand('all');
     setCategory('all');
     setArea('');
@@ -237,6 +248,7 @@ export function ComplaintsListPage() {
             status: status !== 'all' ? status : undefined,
             priority: priority !== 'all' ? priority : undefined,
             servicer: servicer !== 'all' ? servicer : undefined,
+            representative: representative !== 'all' ? representative : undefined,
             brand: brand !== 'all' ? brand : undefined,
             category: category !== 'all' ? category : undefined,
             area: area.trim() || undefined,
@@ -449,6 +461,27 @@ export function ComplaintsListPage() {
               </select>
             </div>
 
+            {/* Representative (REP) Filter */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-400">REP:</span>
+              <select
+                value={representative}
+                onChange={(e) => {
+                  setRepresentative(e.target.value);
+                  setPage(1);
+                }}
+                className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:bg-white focus:border-teal-500"
+              >
+                <option value="all">All REPs</option>
+                <option value="unassigned">Not assigned</option>
+                {representatives.map((r) => (
+                  <option key={r._id} value={r._id}>
+                    {r.name} {!r.isActive ? '(Inactive)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="flex items-center gap-1.5">
               <span className="text-slate-400">Area:</span>
               <input
@@ -508,7 +541,7 @@ export function ComplaintsListPage() {
               </select>
             </div>
 
-            {(search || status !== 'all' || priority !== 'all' || servicer !== 'all' || brand !== 'all' || category !== 'all' || area || startDate || endDate) && (
+            {(search || status !== 'all' || priority !== 'all' || servicer !== 'all' || representative !== 'all' || brand !== 'all' || category !== 'all' || area || startDate || endDate) && (
               <button
                 onClick={handleClearFilters}
                 className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-800 transition font-medium"
@@ -581,6 +614,7 @@ export function ComplaintsListPage() {
                   <th className="py-3 px-4">Brand / Cat</th>
                   <th className="py-3 px-4">Product</th>
                   <th className="py-3 px-4">Area</th>
+                  <th className="py-3 px-4">REP</th>
                   <th className="py-3 px-4">Servicer</th>
                   <th className="py-3 px-4">Priority</th>
                   <th className="py-3 px-4">Status</th>
@@ -621,6 +655,15 @@ export function ComplaintsListPage() {
                     </td>
                     <td className="py-3.5 px-4 text-slate-600 whitespace-nowrap">
                       {c.area}
+                    </td>
+                    <td className="py-3.5 px-4 text-slate-700 whitespace-nowrap">
+                      {c.representative?.name || c.representativeNameSnapshot ? (
+                        <span className="font-medium text-slate-800">
+                          {c.representative?.name || c.representativeNameSnapshot}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 italic">Not assigned</span>
+                      )}
                     </td>
                     <td className="py-3.5 px-4 text-slate-700 whitespace-nowrap">
                       {c.assignedServicer?.name || c.servicerNameSnapshot ? (

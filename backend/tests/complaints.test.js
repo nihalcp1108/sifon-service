@@ -1,7 +1,7 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import request from 'supertest';
-import { setupTestDB, teardownTestDB, getCsrfAndAuth } from './setup.js';
+import { setupTestDB, teardownTestDB, getCsrfAndAuth, defaultTestRep } from './setup.js';
 import { Servicer } from '../src/models/Servicer.js';
 import { Brand } from '../src/models/Brand.js';
 import { Category } from '../src/models/Category.js';
@@ -58,6 +58,7 @@ describe('Complaints, Servicers & Workflow Rules', () => {
         customerPhone: '9123456780',
         customerAddress: '42 MG Road, Bangalore',
         area: 'Indiranagar',
+        representative: defaultTestRep._id.toString(),
         productName: 'RO Filter',
         subject: 'Low water flow',
         description: 'Water filtration rate dropped significantly over the past 2 days.',
@@ -77,6 +78,7 @@ describe('Complaints, Servicers & Workflow Rules', () => {
         customerPhone: '9123456780',
         customerAddress: '42 MG Road, Bangalore',
         area: 'Indiranagar',
+        representative: defaultTestRep._id.toString(),
         brand: String(testBrand._id),
         category: String(testCategory._id),
         productName: 'sifon-service Pro Filter',
@@ -106,6 +108,7 @@ describe('Complaints, Servicers & Workflow Rules', () => {
         customerPhone: '9876543210',
         customerAddress: 'Chinnaswamy Stadium',
         area: 'MG Road',
+        representative: defaultTestRep._id.toString(),
         productName: 'RO 20L',
         subject: 'Filter replacement',
         description: 'Need routine filter change after 6 months',
@@ -123,6 +126,7 @@ describe('Complaints, Servicers & Workflow Rules', () => {
         customerPhone: '9876543211',
         customerAddress: 'Koramangala',
         area: 'South',
+        representative: defaultTestRep._id.toString(),
         productName: 'RO 20L',
         subject: 'Different issue',
         description: 'Some test issue',
@@ -141,6 +145,7 @@ describe('Complaints, Servicers & Workflow Rules', () => {
         customerPhone: '9876543212',
         customerAddress: 'Indiranagar',
         area: 'East',
+        representative: defaultTestRep._id.toString(),
         productName: 'RO 20L',
         subject: 'Third issue',
         description: 'Some third test issue',
@@ -162,6 +167,7 @@ describe('Complaints, Servicers & Workflow Rules', () => {
           customerPhone: '9876501234',
           customerAddress: '123 Main St',
           area: 'Central',
+          representative: defaultTestRep._id.toString(),
           productName: 'RO Classic',
           subject: 'Testing valid ID format',
           description: 'Testing allowed characters in manual complaint ID',
@@ -183,6 +189,7 @@ describe('Complaints, Servicers & Workflow Rules', () => {
         customerPhone: '9888877771',
         customerAddress: 'Flat 301, Palm Heights',
         area: 'Whitefield',
+        representative: defaultTestRep._id.toString(),
         productName: 'sifon-service Elite',
         subject: 'Display not working',
         description: 'LED indicator stopped blinking and beeps intermittently',
@@ -231,6 +238,7 @@ describe('Complaints, Servicers & Workflow Rules', () => {
         customerPhone: '9555544443',
         customerAddress: '12 Temple St',
         area: 'Jayanagar',
+        representative: defaultTestRep._id.toString(),
         productName: 'sifon-service Pro',
         subject: 'Filter replacement needed',
         description: 'Scheduled filter life expired',
@@ -288,6 +296,7 @@ describe('Complaints, Servicers & Workflow Rules', () => {
         customerPhone: '9888877772',
         customerAddress: '123 Main St',
         area: 'Koramangala',
+        representative: defaultTestRep._id.toString(),
         productName: 'sifon-service Pure',
         subject: 'General checkup',
         description: 'Routine maintenance checkup',
@@ -309,6 +318,7 @@ describe('Complaints, Servicers & Workflow Rules', () => {
         customerPhone: '9777788889',
         customerAddress: 'Suite 4',
         area: 'BTM Layout',
+        representative: defaultTestRep._id.toString(),
         productName: 'sifon-service Alpha',
         subject: 'Testing concurrency',
         description: 'Initial state for conflict test',
@@ -383,6 +393,7 @@ describe('Complaints, Servicers & Workflow Rules', () => {
         customerPhone: '9444433332',
         customerAddress: 'Road 5',
         area: 'Hebbal',
+        representative: defaultTestRep._id.toString(),
         productName: 'sifon-service Nano',
         subject: 'To be archived',
         description: 'Testing archive workflow',

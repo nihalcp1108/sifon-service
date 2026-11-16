@@ -183,6 +183,7 @@ export function ServiceComplaintModal({
 
   const brandName = complaint.brand?.name || complaint.brandNameSnapshot || 'Not assigned';
   const categoryName = complaint.category?.name || complaint.categoryNameSnapshot || 'Not assigned';
+  const repName = complaint.representative?.name || complaint.representativeNameSnapshot || 'Not assigned';
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Complete Complaint Service" maxWidth="max-w-3xl">
@@ -206,7 +207,7 @@ export function ServiceComplaintModal({
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
             <div>
               <span className="text-slate-400 block mb-0.5 font-medium">Customer:</span>
               <span className="font-bold text-slate-800 flex items-center gap-1">
@@ -225,6 +226,14 @@ export function ServiceComplaintModal({
               </span>
               <span className="text-slate-500 block truncate mt-0.5">
                 {brandName} &bull; {categoryName}
+              </span>
+            </div>
+
+            <div>
+              <span className="text-slate-400 block mb-0.5 font-medium">Registered by (REP):</span>
+              <span className="font-bold text-slate-800 flex items-center gap-1">
+                <UserCheck className="w-3.5 h-3.5 text-teal-600" />
+                {repName}
               </span>
             </div>
 

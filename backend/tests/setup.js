@@ -3,10 +3,12 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { createApp } from '../src/app.js';
 import { Admin } from '../src/models/Admin.js';
+import { Representative } from '../src/models/Representative.js';
 import { config } from '../src/config/env.js';
 
 let mongod;
 export let app;
+export let defaultTestRep;
 
 export const TEST_ADMIN = {
   name: 'Test Administrator',
@@ -33,7 +35,15 @@ export async function setupTestDB() {
     role: 'admin',
   });
 
-  return { app, admin };
+  // Create default active representative
+  defaultTestRep = await Representative.create({
+    name: 'Default Test REP',
+    phone: '9876543210',
+    email: 'rep@test.local',
+    isActive: true,
+  });
+
+  return { app, admin, rep: defaultTestRep };
 }
 
 export async function teardownTestDB() {

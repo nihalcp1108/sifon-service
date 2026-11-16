@@ -1,7 +1,7 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import request from 'supertest';
-import { setupTestDB, teardownTestDB, getCsrfAndAuth } from './setup.js';
+import { setupTestDB, teardownTestDB, getCsrfAndAuth, defaultTestRep } from './setup.js';
 import { Brand } from '../src/models/Brand.js';
 import { Category } from '../src/models/Category.js';
 
@@ -125,6 +125,7 @@ describe('Brand & Category Management & PDF Reports', () => {
           customerAddress: 'Brand St',
           area: 'West Zone',
           brand: testBrand._id,
+          representative: defaultTestRep._id.toString(),
           productName: 'Kent Grand Plus',
           subject: 'Brand PDF Test Issue',
           description: 'Testing brand-specific PDF export report',
@@ -248,6 +249,7 @@ describe('Brand & Category Management & PDF Reports', () => {
           customerAddress: 'Industrial Zone 4',
           area: 'Peenya',
           category: testCategory._id,
+          representative: defaultTestRep._id.toString(),
           productName: '1000 LPH RO Plant',
           subject: 'Category PDF Test Issue',
           description: 'Testing category-specific PDF export report',

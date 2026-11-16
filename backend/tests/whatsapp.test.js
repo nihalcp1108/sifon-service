@@ -2,7 +2,7 @@ import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'crypto';
 import request from 'supertest';
-import { setupTestDB, teardownTestDB, getCsrfAndAuth } from './setup.js';
+import { setupTestDB, teardownTestDB, getCsrfAndAuth, defaultTestRep } from './setup.js';
 import { WhatsAppNotification } from '../src/models/WhatsAppNotification.js';
 import { Complaint } from '../src/models/Complaint.js';
 import { getNotificationSettings } from '../src/models/NotificationSettings.js';
@@ -491,6 +491,7 @@ describe('WhatsApp Notifications, Settings, Queueing, Delivery & Verification', 
         customerName: 'Silent Customer',
         customerPhone: '9876500001',
         countryCode: '+91',
+        representative: defaultTestRep._id.toString(),
         sendWhatsAppConfirmation: false, // Unchecked
         customerAddress: '12 Quiet Lane',
         area: 'Jayanagar',
@@ -516,6 +517,7 @@ describe('WhatsApp Notifications, Settings, Queueing, Delivery & Verification', 
         customerName: 'Karan Mehra',
         customerPhone: '9876543210',
         countryCode: '+91',
+        representative: defaultTestRep._id.toString(),
         sendWhatsAppConfirmation: true,
         customerAddress: '7th Cross Road',
         area: 'Indiranagar',
@@ -799,6 +801,7 @@ describe('WhatsApp Notifications, Settings, Queueing, Delivery & Verification', 
           customerName: 'Aarav Patel',
           customerPhone: '9876543210',
           countryCode: '+91',
+          representative: defaultTestRep._id.toString(),
           customerAddress: '123 MG Road',
           area: 'Indiranagar',
           productName: 'Microwave Oven',

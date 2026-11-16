@@ -15,6 +15,7 @@ import { ComplaintDetailsPage } from './pages/ComplaintDetailsPage';
 import { BrandsPage } from './pages/BrandsPage';
 import { CategoriesPage } from './pages/CategoriesPage';
 import { ServicersPage } from './pages/ServicersPage';
+import { RepresentativesPage } from './pages/RepresentativesPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
@@ -39,6 +40,7 @@ export function App() {
                   <Route path="/brands" element={<BrandsPage />} />
                   <Route path="/categories" element={<CategoriesPage />} />
                   <Route path="/servicers" element={<ServicersPage />} />
+                  <Route path="/representatives" element={<RepresentativesPage />} />
                   <Route path="/settings" element={<SettingsPage />} />
                 </Route>
               </Route>

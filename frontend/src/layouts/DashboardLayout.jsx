@@ -8,6 +8,7 @@ import {
   Tag,
   Layers,
   Users,
+  UserCheck,
   Settings,
   LogOut,
   Menu,
@@ -38,6 +39,7 @@ export function DashboardLayout() {
     { to: '/brands', label: 'Brands', icon: Tag, end: false },
     { to: '/categories', label: 'Categories', icon: Layers, end: false },
     { to: '/servicers', label: 'Servicers', icon: Users, end: false },
+    { to: '/representatives', label: 'Representatives', icon: UserCheck, end: false },
     { to: '/settings', label: 'Account Settings', icon: Settings, end: false },
   ];
 

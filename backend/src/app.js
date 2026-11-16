@@ -11,6 +11,7 @@ import { errorHandler } from './middleware/errorHandler.js';
 import authRoutes from './routes/authRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import servicerRoutes from './routes/servicerRoutes.js';
+import representativeRoutes from './routes/representativeRoutes.js';
 import brandRoutes from './routes/brandRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
 import complaintRoutes from './routes/complaintRoutes.js';
@@ -91,6 +92,7 @@ export function createApp() {
   app.use('/api/auth', authRoutes);
   app.use('/api/admin', adminRoutes);
   app.use('/api/servicers', servicerRoutes);
+  app.use('/api/representatives', representativeRoutes);
   app.use('/api/brands', brandRoutes);
   app.use('/api/categories', categoryRoutes);
   app.use('/api/complaints', complaintRoutes);

@@ -1,7 +1,7 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import request from 'supertest';
-import { setupTestDB, teardownTestDB, getCsrfAndAuth } from './setup.js';
+import { setupTestDB, teardownTestDB, getCsrfAndAuth, defaultTestRep } from './setup.js';
 
 describe('PDF Generation & Reports', () => {
   let app;
@@ -26,6 +26,7 @@ describe('PDF Generation & Reports', () => {
         customerEmail: 'suresh@cricket.local',
         customerAddress: '100 Stadium Road, Sector 3',
         area: 'Koramangala',
+        representative: defaultTestRep._id.toString(),
         productName: 'Rocoware Commercial RO 50LPH',
         modelNumber: 'RCW-COM-50',
         serialNumber: 'SN-99887766',

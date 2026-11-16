@@ -17,6 +17,7 @@ import {
 import { api } from '../api/client';
 import { useToast } from '../components/Toast';
 import { Modal } from '../components/Modal';
+import { SearchableSelect } from '../components/SearchableSelect';
 import {
   validateAndFormatCustomerPhone,
   cleanDuplicateCountryCode,
@@ -28,6 +29,7 @@ export function NewComplaintPage() {
   const toast = useToast();
 
   const [servicers, setServicers] = useState([]);
+  const [representatives, setRepresentatives] = useState([]);
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
   const [isWhatsAppGloballyEnabled, setIsWhatsAppGloballyEnabled] = useState(true);
@@ -44,6 +46,12 @@ export function NewComplaintPage() {
   const [isUpdatingPhone, setIsUpdatingPhone] = useState(false);
   const [phoneUpdateError, setPhoneUpdateError] = useState('');
 
+  // Inline REP Modal State
+  const [repModalOpen, setRepModalOpen] = useState(false);
+  const [repSubmitting, setRepSubmitting] = useState(false);
+  const [repModalForm, setRepModalForm] = useState({ name: '', phone: '', email: '' });
+  const [repModalError, setRepModalError] = useState('');
+
   // Inline Brand Modal State
   const [brandModalOpen, setBrandModalOpen] = useState(false);
   const [brandSubmitting, setBrandSubmitting] = useState(false);
@@ -59,6 +67,7 @@ export function NewComplaintPage() {
   // Form fields
   const [formData, setFormData] = useState({
     complaintNumber: '',
+    representative: '',
     brand: '',
     category: '',
     customerName: '',
@@ -86,6 +95,7 @@ export function NewComplaintPage() {
     setRegisteredWhatsAppLink(null);
     setFormData({
       complaintNumber: '',
+      representative: '',
       brand: '',
       category: '',
       customerName: '',
@@ -144,6 +154,19 @@ export function NewComplaintPage() {
     return [];
   };
 
+  const fetchActiveRepresentatives = async () => {
+    try {
+      const res = await api.get('/representatives', { params: { activeOnly: 'true' } });
+      if (res.data?.success) {
+        setRepresentatives(res.data.data);
+        return res.data.data;
+      }
+    } catch {
+      // Non-blocking
+    }
+    return [];
+  };
+
   useEffect(() => {
     api.get('/servicers', { params: { activeOnly: 'true' } })
       .then((res) => {
@@ -155,6 +178,7 @@ export function NewComplaintPage() {
 
     fetchActiveBrands();
     fetchActiveCategories();
+    fetchActiveRepresentatives();
 
     api.get('/settings/notifications')
       .then((res) => {
@@ -227,6 +251,33 @@ export function NewComplaintPage() {
     }
   };
 
+  // Inline REP Creation
+  const handleCreateRepresentative = async (e) => {
+    e.preventDefault();
+    if (!repModalForm.name.trim()) return;
+    setRepModalError('');
+    setRepSubmitting(true);
+    try {
+      const res = await api.post('/representatives', {
+        name: repModalForm.name.trim(),
+        phone: repModalForm.phone.trim(),
+        email: repModalForm.email.trim(),
+      });
+      if (res.data?.success) {
+        const newRep = res.data.data;
+        toast.success(`Representative "${newRep.name}" created`);
+        await fetchActiveRepresentatives();
+        setFormData((prev) => ({ ...prev, representative: newRep._id }));
+        setRepModalOpen(false);
+        setRepModalForm({ name: '', phone: '', email: '' });
+      }
+    } catch (err) {
+      setRepModalError(err.response?.data?.error?.message || 'Failed to create representative');
+    } finally {
+      setRepSubmitting(false);
+    }
+  };
+
   const handleFileDrop = (e) => {
     e.preventDefault();
     setIsDragging(false);
@@ -290,6 +341,12 @@ export function NewComplaintPage() {
     setSubmitError('');
     setUploadProgress(0);
     setFormErrors({});
+
+    if (!formData.representative) {
+      setFormErrors({ representative: 'Registered by (REP) is required' });
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       const payload = new FormData();
@@ -445,7 +502,7 @@ export function NewComplaintPage() {
             1. Ticket Identification & Classification
           </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Manual Complaint ID */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -468,6 +525,30 @@ export function NewComplaintPage() {
               {formErrors.complaintNumber && (
                 <p className="text-[11px] text-rose-600 mt-1">{formErrors.complaintNumber}</p>
               )}
+            </div>
+
+            {/* Registered by (REP) Dropdown with Add REP Modal */}
+            <div>
+              <SearchableSelect
+                label="Registered by (REP)"
+                required
+                name="representative"
+                value={formData.representative}
+                onChange={handleChange}
+                onAddNew={() => {
+                  setRepModalError('');
+                  setRepModalOpen(true);
+                }}
+                addNewLabel="Add REP"
+                placeholder="-- Select Active REP --"
+                error={formErrors.representative}
+                helperText="Person who registered/brought in the complaint (distinct from servicer)."
+                options={representatives.map((r) => ({
+                  value: r._id,
+                  label: r.name,
+                  sublabel: r.phone || r.email || `ID: ${r._id.slice(-6)}`,
+                }))}
+              />
             </div>
 
             {/* Brand Dropdown with Add Brand Modal */}
@@ -1024,6 +1105,83 @@ export function NewComplaintPage() {
           </button>
         </div>
       </form>
+
+      {/* Inline REP Creation Modal */}
+      <Modal
+        isOpen={repModalOpen}
+        onClose={() => setRepModalOpen(false)}
+        title="Add New Representative (REP)"
+      >
+        <form onSubmit={handleCreateRepresentative} className="space-y-4">
+          {repModalError && (
+            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>{repModalError}</span>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Representative Name <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              autoFocus
+              value={repModalForm.name}
+              onChange={(e) => setRepModalForm({ ...repModalForm, name: e.target.value })}
+              placeholder="e.g. Rahul Sharma"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:border-teal-500 transition"
+            />
+            <p className="text-[10px] text-slate-400 mt-1">
+              Representatives with the same name are supported.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Phone Number <span className="text-slate-400 font-normal">(Optional)</span>
+            </label>
+            <input
+              type="text"
+              value={repModalForm.phone}
+              onChange={(e) => setRepModalForm({ ...repModalForm, phone: e.target.value })}
+              placeholder="e.g. +91 9876543210"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:border-teal-500 transition"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Email Address <span className="text-slate-400 font-normal">(Optional)</span>
+            </label>
+            <input
+              type="email"
+              value={repModalForm.email}
+              onChange={(e) => setRepModalForm({ ...repModalForm, email: e.target.value })}
+              placeholder="e.g. rahul@example.com"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:border-teal-500 transition"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={() => setRepModalOpen(false)}
+              className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={repSubmitting || !repModalForm.name.trim()}
+              className="px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold shadow-sm disabled:opacity-50"
+            >
+              {repSubmitting ? 'Creating...' : 'Save & Select REP'}
+            </button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Inline Brand Creation Modal */}
       <Modal

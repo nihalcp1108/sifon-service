@@ -261,6 +261,16 @@ const complaintSchema = new mongoose.Schema({
     type: String,
     default: '',
   },
+  representative: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Representative',
+    index: true,
+  },
+  representativeNameSnapshot: {
+    type: String,
+    default: '',
+    trim: true,
+  },
   status: {
     type: String,
     enum: ['Registered', 'Assigned', 'In Progress', 'On Hold', 'Resolved', 'Closed', 'Cancelled'],
@@ -311,6 +321,7 @@ const complaintSchema = new mongoose.Schema({
 });
 
 complaintSchema.index({ 'resolution.completedDate': -1 });
+complaintSchema.index({ representative: 1, status: 1 });
 
 complaintSchema.pre('validate', function (next) {
   if (this.complaintNumber) {

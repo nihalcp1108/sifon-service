@@ -37,6 +37,7 @@ export function CompletedComplaintsPage() {
 
   const [complaints, setComplaints] = useState([]);
   const [servicers, setServicers] = useState([]);
+  const [representatives, setRepresentatives] = useState([]);
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
   const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 10, totalPages: 1 });
@@ -46,6 +47,7 @@ export function CompletedComplaintsPage() {
   // Filters State
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [servicer, setServicer] = useState(searchParams.get('servicer') || 'all');
+  const [representative, setRepresentative] = useState(searchParams.get('representative') || 'all');
   const [brand, setBrand] = useState(searchParams.get('brand') || 'all');
   const [category, setCategory] = useState(searchParams.get('category') || 'all');
   const [completedStartDate, setCompletedStartDate] = useState(searchParams.get('completedStartDate') || '');
@@ -63,6 +65,12 @@ export function CompletedComplaintsPage() {
     api.get('/servicers')
       .then((res) => {
         if (res.data?.success) setServicers(res.data.data);
+      })
+      .catch(() => {});
+
+    api.get('/representatives')
+      .then((res) => {
+        if (res.data?.success) setRepresentatives(res.data.data);
       })
       .catch(() => {});
 
@@ -84,6 +92,7 @@ export function CompletedComplaintsPage() {
     const params = new URLSearchParams();
     if (newParams.search) params.set('search', newParams.search);
     if (newParams.servicer && newParams.servicer !== 'all') params.set('servicer', newParams.servicer);
+    if (newParams.representative && newParams.representative !== 'all') params.set('representative', newParams.representative);
     if (newParams.brand && newParams.brand !== 'all') params.set('brand', newParams.brand);
     if (newParams.category && newParams.category !== 'all') params.set('category', newParams.category);
     if (newParams.completedStartDate) params.set('completedStartDate', newParams.completedStartDate);
@@ -109,6 +118,7 @@ export function CompletedComplaintsPage() {
 
       if (search.trim()) params.search = search.trim();
       if (servicer !== 'all') params.servicer = servicer;
+      if (representative !== 'all') params.representative = representative;
       if (brand !== 'all') params.brand = brand;
       if (category !== 'all') params.category = category;
       if (completedStartDate) params.completedStartDate = completedStartDate;
@@ -124,7 +134,7 @@ export function CompletedComplaintsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [page, sortBy, sortOrder, search, servicer, brand, category, completedStartDate, completedEndDate]);
+  }, [page, sortBy, sortOrder, search, servicer, representative, brand, category, completedStartDate, completedEndDate]);
 
   useEffect(() => {
     fetchCompletedComplaints();
@@ -146,6 +156,7 @@ export function CompletedComplaintsPage() {
     updateUrlParams({
       search,
       servicer,
+      representative,
       brand,
       category,
       completedStartDate,
@@ -160,6 +171,7 @@ export function CompletedComplaintsPage() {
   const handleClearFilters = () => {
     setSearch('');
     setServicer('all');
+    setRepresentative('all');
     setBrand('all');
     setCategory('all');
     setCompletedStartDate('');
@@ -201,6 +213,7 @@ export function CompletedComplaintsPage() {
       } else {
         if (search.trim()) params.search = search.trim();
         if (servicer !== 'all') params.servicer = servicer;
+        if (representative !== 'all') params.representative = representative;
         if (brand !== 'all') params.brand = brand;
         if (category !== 'all') params.category = category;
         if (completedStartDate) params.completedStartDate = completedStartDate;
@@ -237,6 +250,7 @@ export function CompletedComplaintsPage() {
   const hasActiveFilters = Boolean(
     search ||
     servicer !== 'all' ||
+    representative !== 'all' ||
     brand !== 'all' ||
     category !== 'all' ||
     completedStartDate ||
@@ -307,7 +321,7 @@ export function CompletedComplaintsPage() {
         </form>
 
         {/* Filter Selectors Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-slate-100 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-2 border-t border-slate-100 text-xs">
           {/* Servicer filter */}
           <div>
             <label className="text-[11px] font-semibold text-slate-500 block mb-1">
@@ -321,6 +335,7 @@ export function CompletedComplaintsPage() {
                 updateUrlParams({
                   search,
                   servicer: e.target.value,
+                  representative,
                   brand,
                   category,
                   completedStartDate,
@@ -341,6 +356,41 @@ export function CompletedComplaintsPage() {
             </select>
           </div>
 
+          {/* Representative filter */}
+          <div>
+            <label className="text-[11px] font-semibold text-slate-500 block mb-1">
+              Registered By (REP)
+            </label>
+            <select
+              value={representative}
+              onChange={(e) => {
+                setRepresentative(e.target.value);
+                setPage(1);
+                updateUrlParams({
+                  search,
+                  servicer,
+                  representative: e.target.value,
+                  brand,
+                  category,
+                  completedStartDate,
+                  completedEndDate,
+                  sortBy,
+                  sortOrder,
+                  page: 1,
+                });
+              }}
+              className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium"
+            >
+              <option value="all">All REPs</option>
+              <option value="unassigned">Not assigned</option>
+              {representatives.map((r) => (
+                <option key={r._id} value={r._id}>
+                  {r.name} {!r.isActive ? '(Inactive)' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Brand filter */}
           <div>
             <label className="text-[11px] font-semibold text-slate-500 block mb-1">
@@ -354,6 +404,7 @@ export function CompletedComplaintsPage() {
                 updateUrlParams({
                   search,
                   servicer,
+                  representative,
                   brand: e.target.value,
                   category,
                   completedStartDate,
@@ -387,6 +438,7 @@ export function CompletedComplaintsPage() {
                 updateUrlParams({
                   search,
                   servicer,
+                  representative,
                   brand,
                   category: e.target.value,
                   completedStartDate,
@@ -422,6 +474,7 @@ export function CompletedComplaintsPage() {
                   updateUrlParams({
                     search,
                     servicer,
+                    representative,
                     brand,
                     category,
                     completedStartDate: e.target.value,
@@ -444,6 +497,7 @@ export function CompletedComplaintsPage() {
                   updateUrlParams({
                     search,
                     servicer,
+                    representative,
                     brand,
                     category,
                     completedStartDate,
@@ -529,6 +583,7 @@ export function CompletedComplaintsPage() {
                   <th className="py-3 px-4">Phone</th>
                   <th className="py-3 px-4">Brand / Cat</th>
                   <th className="py-3 px-4">Product</th>
+                  <th className="py-3 px-4">REP</th>
                   <th className="py-3 px-4">Serviced By</th>
                   <th className="py-3 px-4">Reg Date</th>
                   <th className="py-3 px-4">Completed Date</th>
@@ -541,6 +596,7 @@ export function CompletedComplaintsPage() {
                 {complaints.map((c) => {
                   const brandDisplay = c.brand?.name || c.brandNameSnapshot || '-';
                   const categoryDisplay = c.category?.name || c.categoryNameSnapshot || '-';
+                  const repDisplay = c.representative?.name || c.representativeNameSnapshot || 'Not assigned';
                   const servicerDisplay = c.assignedServicer?.name || c.servicerNameSnapshot || 'Not recorded';
                   const compDateFormatted = c.resolution?.completedDate
                     ? formatKolkataDate(c.resolution.completedDate)
@@ -568,6 +624,13 @@ export function CompletedComplaintsPage() {
                       </td>
                       <td className="py-3.5 px-4 text-slate-600 max-w-[130px] truncate" title={c.productName}>
                         {c.productName}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-700 whitespace-nowrap">
+                        {c.representative?.name || c.representativeNameSnapshot ? (
+                          <span className="font-medium text-slate-800">{repDisplay}</span>
+                        ) : (
+                          <span className="text-slate-400 italic">Not assigned</span>
+                        )}
                       </td>
                       <td className="py-3.5 px-4 text-slate-700 whitespace-nowrap">
                         <div className="flex items-center gap-1.5">

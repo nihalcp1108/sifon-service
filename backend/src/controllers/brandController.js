@@ -197,6 +197,7 @@ export async function getBrandComplaintsPDF(req, res, next) {
     const complaints = await Complaint.find({ brand: brand._id, isArchived: false })
       .sort({ complaintDate: -1 })
       .populate('assignedServicer', 'name')
+      .populate('representative', 'name')
       .populate('brand', 'name')
       .populate('category', 'name')
       .lean();

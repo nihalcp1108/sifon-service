@@ -40,6 +40,15 @@ export const servicerSchema = z.object({
 
 export const servicerUpdateSchema = servicerSchema.partial();
 
+export const representativeSchema = z.object({
+  name: z.string().min(2, 'Representative name must be at least 2 characters').max(100).trim(),
+  phone: z.string().max(20).trim().optional().or(z.literal('')),
+  email: z.string().email('Invalid email').trim().toLowerCase().optional().or(z.literal('')),
+  isActive: z.boolean().optional(),
+});
+
+export const representativeUpdateSchema = representativeSchema.partial();
+
 export const brandSchema = z.object({
   name: z.string().min(1, 'Brand name is required').max(100).trim(),
   description: z.string().max(500).trim().optional().or(z.literal('')),
@@ -75,6 +84,7 @@ export const complaintCreateSchema = z.object({
   subject: z.string().min(3, 'Complaint subject is required').max(200).trim(),
   description: z.string().min(5, 'Detailed description is required').max(3000).trim(),
   priority: z.enum(['low', 'medium', 'high', 'urgent']).default('medium'),
+  representative: z.string().min(1, 'Registered by (REP) is required').refine(val => isValidObjectId(val), 'Invalid Representative ID'),
   assignedServicer: z.string().optional().or(z.literal('')).refine(val => !val || isValidObjectId(val), 'Invalid servicer ID'),
   scheduledServiceDate: z.string().optional().or(z.literal('')).refine(val => !val || !isNaN(Date.parse(val)), 'Invalid scheduled date'),
   internalNotes: z.string().max(2000).trim().optional().or(z.literal('')),
@@ -100,6 +110,7 @@ export const complaintUpdateSchema = z.object({
   subject: z.string().min(3).max(200).trim().optional(),
   description: z.string().min(5).max(3000).trim().optional(),
   priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
+  representative: z.string().optional().or(z.literal('')).refine(val => !val || isValidObjectId(val), 'Invalid Representative ID'),
   scheduledServiceDate: z.string().optional().or(z.literal('')).refine(val => !val || !isNaN(Date.parse(val)), 'Invalid scheduled date'),
   internalNotes: z.string().max(2000).trim().optional().or(z.literal('')),
   version: z.number().int().nonnegative().optional(),

@@ -27,6 +27,8 @@ export function ServiceDetailsModal({
   const resolution = complaint.resolution || {};
   const servicerName =
     complaint.assignedServicer?.name || complaint.servicerNameSnapshot || 'Not recorded';
+  const repName =
+    complaint.representative?.name || complaint.representativeNameSnapshot || 'Not assigned';
   const brandName = complaint.brand?.name || complaint.brandNameSnapshot || 'Not assigned';
   const categoryName = complaint.category?.name || complaint.categoryNameSnapshot || 'Not assigned';
 
@@ -73,7 +75,7 @@ export function ServiceDetailsModal({
         </div>
 
         {/* Customer & Product Quick Reference */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl text-xs">
           <div>
             <span className="text-slate-400 block mb-0.5 font-medium">Customer Information:</span>
             <span className="font-semibold text-slate-800 flex items-center gap-1.5">
@@ -84,6 +86,18 @@ export function ServiceDetailsModal({
               <Phone className="w-3 h-3 text-slate-400" />
               {complaint.customerPhone}
             </span>
+          </div>
+          <div>
+            <span className="text-slate-400 block mb-0.5 font-medium">Registered by (REP):</span>
+            <span className="font-semibold text-slate-800 flex items-center gap-1.5">
+              <UserCheck className="w-3.5 h-3.5 text-teal-600" />
+              {repName}
+            </span>
+            {complaint.representative?.phone && (
+              <span className="text-slate-500 font-mono text-[11px] block mt-0.5">
+                {complaint.representative.phone}
+              </span>
+            )}
           </div>
           <div>
             <span className="text-slate-400 block mb-0.5 font-medium">Product / Brand:</span>
