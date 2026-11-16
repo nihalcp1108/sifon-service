@@ -216,6 +216,11 @@ export function ServiceComplaintModal({
               </span>
               <span className="text-slate-600 font-mono block mt-0.5">
                 {complaint.customerPhone}
+                {complaint.alternatePhone && (
+                  <span className="text-[11px] text-slate-400 block font-sans">
+                    Alt: {complaint.alternatePhone}
+                  </span>
+                )}
               </span>
             </div>
 

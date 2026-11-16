@@ -82,9 +82,14 @@ export function ServiceDetailsModal({
               <User className="w-3.5 h-3.5 text-slate-400" />
               {complaint.customerName}
             </span>
-            <span className="text-slate-600 font-mono block mt-0.5 flex items-center gap-1.5">
+            <span className="text-slate-600 font-mono block mt-0.5 flex items-center gap-1.5 flex-wrap">
               <Phone className="w-3 h-3 text-slate-400" />
-              {complaint.customerPhone}
+              <span>{complaint.customerPhone}</span>
+              {complaint.alternatePhone && (
+                <span className="text-[11px] text-slate-400 font-sans">
+                  (Alt: {complaint.alternatePhone})
+                </span>
+              )}
             </span>
           </div>
           <div>

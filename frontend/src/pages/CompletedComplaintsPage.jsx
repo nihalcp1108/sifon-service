@@ -615,8 +615,13 @@ export function CompletedComplaintsPage() {
                       <td className="py-3.5 px-4 text-slate-800 font-medium whitespace-nowrap">
                         {c.customerName}
                       </td>
-                      <td className="py-3.5 px-4 font-mono text-slate-600 whitespace-nowrap">
-                        {c.customerPhone}
+                      <td className="py-3.5 px-4 font-mono whitespace-nowrap">
+                        <div className="text-slate-700">{c.customerPhone}</div>
+                        {c.alternatePhone && (
+                          <div className="text-[11px] text-slate-400 font-normal">
+                            Alt: {c.alternatePhone}
+                          </div>
+                        )}
                       </td>
                       <td className="py-3.5 px-4 text-slate-600 whitespace-nowrap">
                         <span className="font-medium text-slate-700">{brandDisplay}</span>

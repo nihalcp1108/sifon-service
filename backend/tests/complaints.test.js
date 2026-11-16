@@ -76,6 +76,7 @@ describe('Complaints, Servicers & Workflow Rules', () => {
         complaintNumber: '00789',
         customerName: 'Anil Sharma',
         customerPhone: '9123456780',
+        alternatePhone: '9988776655',
         customerAddress: '42 MG Road, Bangalore',
         area: 'Indiranagar',
         representative: defaultTestRep._id.toString(),
@@ -359,6 +360,14 @@ describe('Complaints, Servicers & Workflow Rules', () => {
     assert.equal(searchRes.status, 200);
     assert.ok(searchRes.body.data.complaints.length >= 1);
     assert.equal(searchRes.body.data.complaints[0].customerName, 'Anil Sharma');
+
+    // Search by alternate phone
+    const altSearchRes = await request(app)
+      .get('/api/complaints?search=9988776655')
+      .set('Cookie', auth.cookies);
+    assert.equal(altSearchRes.status, 200);
+    assert.ok(altSearchRes.body.data.complaints.length >= 1);
+    assert.equal(altSearchRes.body.data.complaints[0].alternatePhone, '9988776655');
 
     // Filter by status
     const statusRes = await request(app)

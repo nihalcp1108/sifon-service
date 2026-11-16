@@ -184,6 +184,7 @@ function buildComplaintQuery(params) {
           { complaintNumber: regex },
           { customerName: regex },
           { customerPhone: regex },
+          { alternatePhone: regex },
           { productName: regex },
           { area: regex },
           { servicerNameSnapshot: regex },
