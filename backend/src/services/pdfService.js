@@ -362,32 +362,32 @@ export function generateComplaintReportPDF(complaints, filterSummary = {}) {
 
   // Printable width for landscape A4 = ~800, margin 20
   const defaultColWidths = {
-    num: 75,
-    date: 65,
+    num: 70,
+    date: 58,
     customer: 75,
-    phone: 65,
-    brand: 65,
-    category: 65,
+    phone: 100,
+    brand: 60,
+    category: 60,
     product: 70,
-    area: 60,
+    area: 58,
     rep: 70,
-    servicer: 75,
-    priority: 50,
+    servicer: 72,
+    priority: 47,
     status: 60,
   };
 
   const completedColWidths = {
-    num: 75,
-    regDate: 60,
-    customer: 75,
-    phone: 65,
-    brandProduct: 85,
-    rep: 70,
-    servicer: 75,
-    compDate: 70,
-    charge: 65,
-    status: 55,
-    work: 105,
+    num: 70,
+    regDate: 55,
+    customer: 70,
+    phone: 100,
+    brandProduct: 80,
+    rep: 65,
+    servicer: 70,
+    compDate: 65,
+    charge: 60,
+    status: 50,
+    work: 115,
   };
 
   const colWidths = isCompletedReport ? completedColWidths : defaultColWidths;
@@ -454,7 +454,7 @@ export function generateComplaintReportPDF(complaints, filterSummary = {}) {
           { text: 'Complaint ID', width: colWidths.num },
           { text: 'Reg Date', width: colWidths.regDate },
           { text: 'Customer', width: colWidths.customer },
-          { text: 'Phone', width: colWidths.phone },
+          { text: 'Phone / Alt', width: colWidths.phone },
           { text: 'Brand / Product', width: colWidths.brandProduct },
           { text: 'REP', width: colWidths.rep },
           { text: 'Serviced By', width: colWidths.servicer },
@@ -467,7 +467,7 @@ export function generateComplaintReportPDF(complaints, filterSummary = {}) {
           { text: 'Complaint ID', width: colWidths.num },
           { text: 'Date', width: colWidths.date },
           { text: 'Customer', width: colWidths.customer },
-          { text: 'Phone', width: colWidths.phone },
+          { text: 'Phone / Alt', width: colWidths.phone },
           { text: 'Brand', width: colWidths.brand },
           { text: 'Category', width: colWidths.category },
           { text: 'Product', width: colWidths.product },
@@ -518,6 +518,9 @@ export function generateComplaintReportPDF(complaints, filterSummary = {}) {
       const repDisplay = c.representative?.name || c.representativeNameSnapshot || 'Not assigned';
       const brandDisplay = c.brand?.name || c.brandNameSnapshot || 'Not assigned';
       const categoryDisplay = c.category?.name || c.categoryNameSnapshot || 'Not assigned';
+      const phoneDisplay = c.alternatePhone
+        ? `${c.customerPhone} / ${c.alternatePhone}`
+        : (c.customerPhone || '-');
 
       let rowValues = [];
       if (isCompletedReport) {
@@ -532,7 +535,7 @@ export function generateComplaintReportPDF(complaints, filterSummary = {}) {
           { text: c.complaintNumber, width: colWidths.num, bold: true },
           { text: formatKolkataDate(c.complaintDate), width: colWidths.regDate },
           { text: c.customerName, width: colWidths.customer },
-          { text: c.customerPhone, width: colWidths.phone },
+          { text: phoneDisplay, width: colWidths.phone },
           { text: `${brandDisplay} - ${c.productName}`, width: colWidths.brandProduct },
           { text: repDisplay, width: colWidths.rep },
           { text: servicerDisplay, width: colWidths.servicer },
@@ -546,7 +549,7 @@ export function generateComplaintReportPDF(complaints, filterSummary = {}) {
           { text: c.complaintNumber, width: colWidths.num, bold: true },
           { text: formatKolkataDate(c.complaintDate), width: colWidths.date },
           { text: c.customerName, width: colWidths.customer },
-          { text: c.customerPhone, width: colWidths.phone },
+          { text: phoneDisplay, width: colWidths.phone },
           { text: brandDisplay, width: colWidths.brand },
           { text: categoryDisplay, width: colWidths.category },
           { text: c.productName, width: colWidths.product },
