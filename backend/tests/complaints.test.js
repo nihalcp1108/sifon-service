@@ -438,4 +438,65 @@ describe('Complaints, Servicers & Workflow Rules', () => {
     assert.equal(restoreRes.status, 200);
     assert.equal(restoreRes.body.data.isArchived, false);
   });
+
+  it('permanently deletes a complaint via DELETE /api/complaints/:id', async () => {
+    // 1. Create a complaint to delete
+    const createRes = await request(app)
+      .post('/api/complaints')
+      .set('Cookie', auth.cookies)
+      .set('X-CSRF-Token', auth.csrfToken)
+      .send({
+        complaintNumber: 'DEL-TEST-001',
+        customerName: 'Delete Candidate',
+        customerPhone: '9555544443',
+        customerAddress: 'Delete Road 1',
+        area: 'Jayanagar',
+        representative: defaultTestRep._id.toString(),
+        productName: 'sifon-service RO',
+        subject: 'Complaint to be deleted',
+        description: 'Testing deletion endpoint and workflow',
+      });
+    assert.equal(createRes.status, 201);
+    const deleteId = createRes.body.data._id;
+
+    // 2. Reject unauthenticated delete
+    const unauthRes = await request(app)
+      .delete(`/api/complaints/${deleteId}`);
+    assert.equal(unauthRes.status, 401);
+
+    // 3. Reject missing CSRF token
+    const noCsrfRes = await request(app)
+      .delete(`/api/complaints/${deleteId}`)
+      .set('Cookie', auth.cookies);
+    assert.equal(noCsrfRes.status, 403);
+
+    // 4. Reject invalid ID format
+    const invalidIdRes = await request(app)
+      .delete('/api/complaints/not-a-valid-id')
+      .set('Cookie', auth.cookies)
+      .set('X-CSRF-Token', auth.csrfToken);
+    assert.equal(invalidIdRes.status, 400);
+
+    // 5. Successful deletion
+    const delRes = await request(app)
+      .delete(`/api/complaints/${deleteId}`)
+      .set('Cookie', auth.cookies)
+      .set('X-CSRF-Token', auth.csrfToken);
+    assert.equal(delRes.status, 200);
+    assert.equal(delRes.body.success, true);
+    assert.match(delRes.body.message, /deleted successfully/i);
+
+    // 6. Verify complaint is no longer retrievable
+    const getRes = await request(app)
+      .get(`/api/complaints/${deleteId}`)
+      .set('Cookie', auth.cookies);
+    assert.equal(getRes.status, 404);
+
+    // 7. Attempting to delete again returns 404
+    const delAgainRes = await request(app)
+      .delete(`/api/complaints/${deleteId}`)
+      .set('Cookie', auth.cookies)
+      .set('X-CSRF-Token', auth.csrfToken);
+    assert.equal(delAgainRes.status, 404);
+  });
 });

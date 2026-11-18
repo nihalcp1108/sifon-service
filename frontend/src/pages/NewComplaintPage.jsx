@@ -498,17 +498,17 @@ export function NewComplaintPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Ticket Identification & Classification Card */}
+        {/* REG NO Identification & Classification Card */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
           <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider text-teal-600 border-b border-slate-100 pb-2">
-            1. Ticket Identification & Classification
+            1. REG NO Identification & Classification
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Manual Complaint ID */}
+            {/* Manual REG NO */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Complaint ID <span className="text-rose-500">*</span>
+                REG NO <span className="text-rose-500">*</span>
               </label>
               <input
                 type="text"

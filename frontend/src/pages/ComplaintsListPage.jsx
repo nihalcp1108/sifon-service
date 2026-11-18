@@ -21,6 +21,7 @@ import {
   Folder,
   Wrench,
   CheckCircle2,
+  Trash2,
 } from 'lucide-react';
 import { api } from '../api/client';
 import { useToast } from '../components/Toast';
@@ -70,6 +71,8 @@ export function ComplaintsListPage() {
 
   // Modals
   const [confirmArchiveId, setConfirmArchiveId] = useState(null);
+  const [deleteComplaintData, setDeleteComplaintData] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isProcessingAction, setIsProcessingAction] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -79,25 +82,25 @@ export function ComplaintsListPage() {
       .then((res) => {
         if (res.data?.success) setServicers(res.data.data);
       })
-      .catch(() => {});
+      .catch(() => { });
 
     api.get('/representatives')
       .then((res) => {
         if (res.data?.success) setRepresentatives(res.data.data);
       })
-      .catch(() => {});
+      .catch(() => { });
 
     api.get('/brands')
       .then((res) => {
         if (res.data?.success) setBrands(res.data.data);
       })
-      .catch(() => {});
+      .catch(() => { });
 
     api.get('/categories')
       .then((res) => {
         if (res.data?.success) setCategories(res.data.data);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // Update query params in URL
@@ -215,6 +218,24 @@ export function ComplaintsListPage() {
     }
   };
 
+  // Delete complaint
+  const handleDelete = async () => {
+    if (!deleteComplaintData) return;
+    try {
+      setIsDeleting(true);
+      const res = await api.delete(`/complaints/${deleteComplaintData.id}`);
+      if (res.data?.success) {
+        toast.success(`Complaint ${deleteComplaintData.complaintNumber} deleted successfully`);
+        setDeleteComplaintData(null);
+        fetchComplaints();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.error?.message || 'Failed to delete complaint');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   // Download Individual PDF
   const handleDownloadSinglePdf = async (id, number) => {
     try {
@@ -244,18 +265,18 @@ export function ComplaintsListPage() {
       const params = exportAll
         ? { exportAll: 'true' }
         : {
-            search: search.trim() || undefined,
-            status: status !== 'all' ? status : undefined,
-            priority: priority !== 'all' ? priority : undefined,
-            servicer: servicer !== 'all' ? servicer : undefined,
-            representative: representative !== 'all' ? representative : undefined,
-            brand: brand !== 'all' ? brand : undefined,
-            category: category !== 'all' ? category : undefined,
-            area: area.trim() || undefined,
-            startDate: startDate || undefined,
-            endDate: endDate || undefined,
-            isArchived: isArchived ? 'true' : 'false',
-          };
+          search: search.trim() || undefined,
+          status: status !== 'all' ? status : undefined,
+          priority: priority !== 'all' ? priority : undefined,
+          servicer: servicer !== 'all' ? servicer : undefined,
+          representative: representative !== 'all' ? representative : undefined,
+          brand: brand !== 'all' ? brand : undefined,
+          category: category !== 'all' ? category : undefined,
+          area: area.trim() || undefined,
+          startDate: startDate || undefined,
+          endDate: endDate || undefined,
+          isArchived: isArchived ? 'true' : 'false',
+        };
 
       const res = await api.get('/complaints/export/pdf', {
         params,
@@ -296,11 +317,10 @@ export function ComplaintsListPage() {
                 setIsArchived(!isArchived);
                 setPage(1);
               }}
-              className={`px-3 py-1 rounded-xl text-xs font-semibold border transition ${
-                isArchived
+              className={`px-3 py-1 rounded-xl text-xs font-semibold border transition ${isArchived
                   ? 'bg-amber-100 border-amber-300 text-amber-900 hover:bg-amber-200'
                   : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
-              }`}
+                }`}
             >
               {isArchived ? '← Back to Active' : 'View Archived'}
             </button>
@@ -356,7 +376,7 @@ export function ComplaintsListPage() {
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              placeholder="Search complaint ID, customer, phone, brand..."
+              placeholder="Search by REG NO, customer, phone, brand..."
               className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition"
             />
           </div>
@@ -607,7 +627,7 @@ export function ComplaintsListPage() {
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50/70 border-b border-slate-100 text-slate-500 font-semibold uppercase tracking-wider">
                 <tr>
-                  <th className="py-3 px-4">Ticket ID</th>
+                  <th className="py-3 px-4">REG NO</th>
                   <th className="py-3 px-4">Date</th>
                   <th className="py-3 px-4">Customer</th>
                   <th className="py-3 px-4">Phone</th>
@@ -746,6 +766,13 @@ export function ComplaintsListPage() {
                             <Archive className="w-4 h-4" />
                           </button>
                         )}
+                        <button
+                          onClick={() => setDeleteComplaintData({ id: c._id, complaintNumber: c.complaintNumber })}
+                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                          title="Delete Complaint"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -801,6 +828,18 @@ export function ComplaintsListPage() {
         confirmLabel="Archive Record"
         isDestructive={true}
         isLoading={isProcessingAction}
+      />
+
+      {/* Confirmation Modal for Deleting */}
+      <ConfirmModal
+        isOpen={!!deleteComplaintData}
+        onClose={() => setDeleteComplaintData(null)}
+        onConfirm={handleDelete}
+        title="Delete Complaint"
+        message={`Are you sure you want to permanently delete complaint ${deleteComplaintData?.complaintNumber}? This action will remove all service records and attachments and cannot be undone.`}
+        confirmLabel="Delete Record"
+        isDestructive={true}
+        isLoading={isDeleting}
       />
 
       {/* Service Complaint Modal */}

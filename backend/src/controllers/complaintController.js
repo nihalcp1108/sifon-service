@@ -5,6 +5,7 @@ import { Servicer } from '../models/Servicer.js';
 import { Representative } from '../models/Representative.js';
 import { Brand } from '../models/Brand.js';
 import { Category } from '../models/Category.js';
+import { WhatsAppNotification } from '../models/WhatsAppNotification.js';
 import {
   saveAttachmentFile,
   getLocalFileStream,
@@ -1540,6 +1541,61 @@ export async function getComplaintWhatsAppLink(req, res, next) {
     res.json({
       success: true,
       data: linkData,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * Permanently deletes a complaint and cleans up attachments & notifications
+ */
+export async function deleteComplaint(req, res, next) {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid complaint ID' },
+      });
+    }
+
+    const complaint = await Complaint.findById(id);
+    if (!complaint) {
+      return res.status(404).json({
+        success: false,
+        error: { message: 'Complaint not found' },
+      });
+    }
+
+    // Clean up stored attachments if any
+    if (complaint.attachments && complaint.attachments.length > 0) {
+      for (const attachment of complaint.attachments) {
+        const storageKey = attachment.storageKey || attachment.cloudinaryPublicId;
+        const provider = attachment.storageProvider || 'local';
+        const resourceType = attachment.resourceType || 'image';
+        const deliveryType = attachment.deliveryType || 'authenticated';
+        try {
+          await deleteStoredFile(storageKey, provider, resourceType, deliveryType);
+        } catch (fileErr) {
+          console.error(`Failed to delete stored attachment ${storageKey}:`, fileErr);
+        }
+      }
+    }
+
+    // Clean up associated WhatsApp notifications
+    try {
+      await WhatsAppNotification.deleteMany({ complaintId: complaint._id });
+    } catch (notifErr) {
+      console.error(`Failed to delete associated notifications for complaint ${id}:`, notifErr);
+    }
+
+    const complaintNumber = complaint.complaintNumber;
+    await Complaint.findByIdAndDelete(id);
+
+    res.json({
+      success: true,
+      message: `Complaint ${complaintNumber} deleted successfully`,
     });
   } catch (err) {
     next(err);

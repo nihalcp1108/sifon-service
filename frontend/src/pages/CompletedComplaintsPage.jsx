@@ -18,9 +18,11 @@ import {
   Folder,
   FileDown,
   Wrench,
+  Trash2,
 } from 'lucide-react';
 import { api } from '../api/client';
 import { useToast } from '../components/Toast';
+import { ConfirmModal } from '../components/Modal';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ServiceDetailsModal } from '../components/ServiceDetailsModal';
 import {
@@ -58,6 +60,8 @@ export function CompletedComplaintsPage() {
 
   // Modals & Export
   const [selectedServiceComplaint, setSelectedServiceComplaint] = useState(null);
+  const [deleteComplaintData, setDeleteComplaintData] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
   // Fetch filter dropdown options
@@ -66,25 +70,25 @@ export function CompletedComplaintsPage() {
       .then((res) => {
         if (res.data?.success) setServicers(res.data.data);
       })
-      .catch(() => {});
+      .catch(() => { });
 
     api.get('/representatives')
       .then((res) => {
         if (res.data?.success) setRepresentatives(res.data.data);
       })
-      .catch(() => {});
+      .catch(() => { });
 
     api.get('/brands')
       .then((res) => {
         if (res.data?.success) setBrands(res.data.data);
       })
-      .catch(() => {});
+      .catch(() => { });
 
     api.get('/categories')
       .then((res) => {
         if (res.data?.success) setCategories(res.data.data);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // Update query params in URL
@@ -200,6 +204,24 @@ export function CompletedComplaintsPage() {
     }
   };
 
+  // Delete complaint
+  const handleDelete = async () => {
+    if (!deleteComplaintData) return;
+    try {
+      setIsDeleting(true);
+      const res = await api.delete(`/complaints/${deleteComplaintData.id}`);
+      if (res.data?.success) {
+        toast.success(`Complaint ${deleteComplaintData.complaintNumber} deleted successfully`);
+        setDeleteComplaintData(null);
+        fetchComplaints();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.error?.message || 'Failed to delete complaint');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   // Download Completed Complaints PDF (Filtered or All)
   const handleExportPdf = async (exportAll = false) => {
     setIsExporting(true);
@@ -306,7 +328,7 @@ export function CompletedComplaintsPage() {
             <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
             <input
               type="text"
-              placeholder="Search by ticket ID, customer name, phone, or servicer..."
+              placeholder="Search by REG NO, customer name, phone, or servicer..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition"
@@ -578,7 +600,7 @@ export function CompletedComplaintsPage() {
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50/70 border-b border-slate-100 text-slate-500 font-semibold uppercase tracking-wider">
                 <tr>
-                  <th className="py-3 px-4">Ticket ID</th>
+                  <th className="py-3 px-4">REG NO</th>
                   <th className="py-3 px-4">Customer</th>
                   <th className="py-3 px-4">Phone</th>
                   <th className="py-3 px-4">Brand / Cat</th>
@@ -670,7 +692,7 @@ export function CompletedComplaintsPage() {
                           <Link
                             to={`/complaints/${c._id}`}
                             className="p-1.5 text-slate-500 hover:text-teal-600 hover:bg-slate-100 rounded-lg transition"
-                            title="View Full Ticket"
+                            title="View Details"
                           >
                             <Eye className="w-4 h-4" />
                           </Link>
@@ -681,6 +703,14 @@ export function CompletedComplaintsPage() {
                             title="Download Complaint PDF"
                           >
                             <Download className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteComplaintData({ id: c._id, complaintNumber: c.complaintNumber })}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                            title="Delete Complaint"
+                          >
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
@@ -760,6 +790,18 @@ export function CompletedComplaintsPage() {
         onClose={() => setSelectedServiceComplaint(null)}
         complaint={selectedServiceComplaint}
         onDownloadPdf={handleDownloadSinglePdf}
+      />
+
+      {/* Confirmation Modal for Deleting */}
+      <ConfirmModal
+        isOpen={!!deleteComplaintData}
+        onClose={() => setDeleteComplaintData(null)}
+        onConfirm={handleDelete}
+        title="Delete Complaint"
+        message={`Are you sure you want to permanently delete complaint ${deleteComplaintData?.complaintNumber}? This action cannot be undone.`}
+        confirmLabel="Delete Record"
+        isDestructive={true}
+        isLoading={isDeleting}
       />
     </div>
   );

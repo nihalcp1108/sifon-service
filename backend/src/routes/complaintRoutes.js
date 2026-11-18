@@ -16,6 +16,7 @@ import {
   restoreComplaint,
   getComplaintWhatsAppLink,
   completeComplaintService,
+  deleteComplaint,
 } from '../controllers/complaintController.js';
 import { retryNotification } from '../controllers/notificationController.js';
 import { requireAuth } from '../middleware/authMiddleware.js';
@@ -44,6 +45,7 @@ router.get('/:id/whatsapp-link', getComplaintWhatsAppLink);
 
 // Details by ID
 router.get('/:id', getComplaintById);
+router.delete('/:id', csrfProtection, deleteComplaint);
 
 // Update fields & lifecycle
 router.patch('/:id', csrfProtection, updateComplaint);

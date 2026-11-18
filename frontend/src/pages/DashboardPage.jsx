@@ -149,11 +149,10 @@ export function DashboardPage() {
             <div
               key={card.label}
               onClick={() => navigate(card.path)}
-              className={`p-5 rounded-2xl border transition-all cursor-pointer hover:shadow-md hover:-translate-y-0.5 flex flex-col justify-between ${
-                isTotal
+              className={`p-5 rounded-2xl border transition-all cursor-pointer hover:shadow-md hover:-translate-y-0.5 flex flex-col justify-between ${isTotal
                   ? 'bg-teal-600 text-white border-teal-600 shadow-md shadow-teal-600/20'
                   : `bg-white ${card.color}`
-              }`}
+                }`}
             >
               <div className="flex items-center justify-between mb-3">
                 <span className={`text-xs font-semibold uppercase tracking-wider ${isTotal ? 'text-teal-100' : 'text-slate-500'}`}>
@@ -198,7 +197,7 @@ export function DashboardPage() {
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="text-xs text-slate-400 font-semibold uppercase tracking-wider border-b border-slate-100">
-                      <th className="pb-3">Ticket</th>
+                      <th className="pb-3">REG NO</th>
                       <th className="pb-3">Customer</th>
                       <th className="pb-3">Product</th>
                       <th className="pb-3">Servicer</th>
@@ -324,7 +323,7 @@ export function DashboardPage() {
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="text-xs text-slate-400 font-semibold uppercase tracking-wider border-b border-slate-100">
-                  <th className="pb-3">Ticket ID</th>
+                  <th className="pb-3">REG NO</th>
                   <th className="pb-3">Customer</th>
                   <th className="pb-3">Serviced By</th>
                   <th className="pb-3">Completed Date</th>

@@ -78,6 +78,8 @@ export function ComplaintDetailsPage() {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [editDetailsModalOpen, setEditDetailsModalOpen] = useState(false);
   const [confirmArchiveOpen, setConfirmArchiveOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [deleteAttachmentId, setDeleteAttachmentId] = useState(null);
   const [isSubmittingModal, setIsSubmittingModal] = useState(false);
 
@@ -530,6 +532,21 @@ export function ComplaintDetailsPage() {
     }
   };
 
+  // Permanently delete complaint
+  const handleDeleteComplaint = async () => {
+    try {
+      setIsDeleting(true);
+      const res = await api.delete(`/complaints/${id}`);
+      if (res.data?.success) {
+        toast.success(`Complaint ${complaint.complaintNumber} deleted successfully`);
+        navigate('/complaints');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.error?.message || 'Failed to delete complaint');
+      setIsDeleting(false);
+    }
+  };
+
   if (isLoading) {
     return <LoadingSpinner size="lg" message="Loading complaint details..." />;
   }
@@ -681,6 +698,14 @@ export function ComplaintDetailsPage() {
             title={complaint.isArchived ? 'Restore Complaint' : 'Archive Complaint'}
           >
             {complaint.isArchived ? <RotateCcw className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
+          </button>
+
+          <button
+            onClick={() => setConfirmDeleteOpen(true)}
+            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition"
+            title="Delete Complaint"
+          >
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -1602,9 +1627,9 @@ export function ComplaintDetailsPage() {
       >
         <form onSubmit={handleSaveDetails} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-            {/* Read-only Complaint ID */}
+            {/* Read-only REG NO */}
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Complaint ID (Read-only)</label>
+              <label className="block font-semibold text-slate-700 mb-1">REG NO (Read-only)</label>
               <input
                 type="text"
                 disabled
@@ -1853,6 +1878,18 @@ export function ComplaintDetailsPage() {
         confirmLabel="Reopen Ticket"
         isDestructive={false}
         isLoading={isSubmittingModal}
+      />
+
+      {/* Delete Complaint Confirmation */}
+      <ConfirmModal
+        isOpen={confirmDeleteOpen}
+        onClose={() => setConfirmDeleteOpen(false)}
+        onConfirm={handleDeleteComplaint}
+        title="Delete Complaint"
+        message={`Are you sure you want to permanently delete complaint ${complaint.complaintNumber}? This will permanently remove this complaint, its timeline history, and all attached files. This action cannot be undone.`}
+        confirmLabel="Delete Permanently"
+        isDestructive={true}
+        isLoading={isDeleting}
       />
 
       {/* Service Complaint Modal */}
