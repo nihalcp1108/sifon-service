@@ -133,6 +133,7 @@ export function ComplaintDetailsPage() {
           scheduledServiceDate: data.scheduledServiceDate ? new Date(data.scheduledServiceDate).toISOString().slice(0, 16) : '',
         });
         setEditForm({
+          shopName: data.shopName || '',
           representative: data.representative?._id || data.representative || '',
           brand: data.brand?._id || data.brand || '',
           category: data.category?._id || data.category || '',
@@ -1204,6 +1205,13 @@ export function ComplaintDetailsPage() {
                   <span>{complaint.representative.email}</span>
                 </div>
               )}
+
+              {complaint.shopName && (
+                <div className="pt-2 border-t border-slate-100">
+                  <span className="text-slate-400 block text-[10px]">Shop Name</span>
+                  <span className="font-semibold text-slate-800 text-xs">{complaint.shopName}</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1611,6 +1619,18 @@ export function ComplaintDetailsPage() {
                 type="text"
                 value={editForm.customerName || ''}
                 onChange={(e) => setEditForm({ ...editForm, customerName: e.target.value })}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">Shop Name</label>
+              <input
+                type="text"
+                value={editForm.shopName || ''}
+                onChange={(e) => setEditForm({ ...editForm, shopName: e.target.value })}
+                placeholder="e.g. Modern Electronics / Dealer"
+                maxLength={150}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
               />
             </div>

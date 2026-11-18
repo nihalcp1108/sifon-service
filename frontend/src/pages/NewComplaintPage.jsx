@@ -67,6 +67,7 @@ export function NewComplaintPage() {
   // Form fields
   const [formData, setFormData] = useState({
     complaintNumber: '',
+    shopName: '',
     representative: '',
     brand: '',
     category: '',
@@ -95,6 +96,7 @@ export function NewComplaintPage() {
     setRegisteredWhatsAppLink(null);
     setFormData({
       complaintNumber: '',
+      shopName: '',
       representative: '',
       brand: '',
       category: '',
@@ -524,6 +526,30 @@ export function NewComplaintPage() {
               </p>
               {formErrors.complaintNumber && (
                 <p className="text-[11px] text-rose-600 mt-1">{formErrors.complaintNumber}</p>
+              )}
+            </div>
+
+            {/* Shop Name (Optional) */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Shop Name
+              </label>
+              <input
+                type="text"
+                name="shopName"
+                value={formData.shopName}
+                onChange={handleChange}
+                placeholder="e.g. Modern Electronics / Dealer"
+                maxLength={150}
+                className={`w-full px-3 py-2 bg-slate-50 border rounded-xl text-xs transition focus:bg-white ${
+                  formErrors.shopName ? 'border-rose-400 bg-rose-50' : 'border-slate-200'
+                }`}
+              />
+              <p className="text-[10px] text-slate-400 mt-1">
+                Optional plain-text shop or dealer name.
+              </p>
+              {formErrors.shopName && (
+                <p className="text-[11px] text-rose-600 mt-1">{formErrors.shopName}</p>
               )}
             </div>
 

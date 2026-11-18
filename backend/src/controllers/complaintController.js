@@ -185,6 +185,7 @@ function buildComplaintQuery(params) {
           { customerName: regex },
           { customerPhone: regex },
           { alternatePhone: regex },
+          { shopName: regex },
           { productName: regex },
           { area: regex },
           { servicerNameSnapshot: regex },
@@ -584,6 +585,11 @@ export async function updateComplaint(req, res, next) {
     // Track priority change
     if (data.priority && data.priority !== complaint.priority) {
       timelineChanges.push(`Priority changed from ${complaint.priority} to ${data.priority}`);
+    }
+
+    // Track shop name change
+    if (data.shopName !== undefined && data.shopName !== (complaint.shopName || '')) {
+      timelineChanges.push(`Shop Name updated to "${data.shopName || 'None'}"`);
     }
 
     // Brand update

@@ -129,79 +129,45 @@ export function generateComplaintPDF(complaint, imageBuffers = {}) {
       .text(value || 'N/A', x, curY + 12, { width, ellipsis: true });
   }
 
-  // --- Status & Assignment Overview ---
-  y = renderSectionHeader('Status & Assignment', y);
-  renderKV('Current Status', complaint.status, 40, y, 120);
-  renderKV('Priority', (complaint.priority || '').toUpperCase(), 170, y, 100);
-  renderKV('Assigned Servicer', complaint.assignedServicer?.name || complaint.servicerNameSnapshot || 'Unassigned', 280, y, 130);
-  renderKV('Registered by (REP)', complaint.representative?.name || complaint.representativeNameSnapshot || 'Not assigned', 420, y, 135);
+  // --- Registration & Attribution ---
+  y = renderSectionHeader('Registration & Attribution', y);
+  renderKV('Registration Date', formatKolkataDateTime(complaint.complaintDate), 40, y, 150);
+  renderKV('Scheduled Date', formatKolkataDateTime(complaint.scheduledServiceDate), 200, y, 150);
   y += 30;
-  renderKV('Scheduled Date', formatKolkataDateTime(complaint.scheduledServiceDate), 40, y, 200);
-  renderKV('Registration Date', formatKolkataDateTime(complaint.complaintDate), 280, y, 200);
+  // Relative order: Shop Name -> REP
+  renderKV('Shop Name', complaint.shopName || 'None', 40, y, 150);
+  renderKV('Registered by (REP)', complaint.representative?.name || complaint.representativeNameSnapshot || 'Not assigned', 200, y, 320);
   y += 35;
 
-  // --- Customer Information ---
-  y = renderSectionHeader('Customer Information', y);
-  renderKV('Customer Name', complaint.customerName, 40, y);
-  renderKV('Phone Number', complaint.customerPhone, 200, y);
-  renderKV('Alternate Phone', complaint.alternatePhone || 'None', 360, y);
-  y += 30;
-
-  renderKV('Email', complaint.customerEmail || 'None', 40, y);
-  renderKV('Area / Location', complaint.area, 200, y);
-  renderKV('Address', complaint.customerAddress, 360, y, 195);
-  y += 35;
-
-  // --- Product, Brand & Category Information ---
-  y = renderSectionHeader('Product, Brand & Category Details', y);
+  // --- Customer & Product Information ---
+  y = renderSectionHeader('Customer & Product Information', y);
   const brandName = complaint.brand?.name || complaint.brandNameSnapshot || 'Not assigned';
-  const categoryName = complaint.category?.name || complaint.categoryNameSnapshot || 'Not assigned';
-
-  renderKV('Brand', brandName, 40, y);
-  renderKV('Category', categoryName, 200, y);
-  renderKV('Product Name', complaint.productName, 360, y);
-  y += 30;
-
-  renderKV('Model Number', complaint.modelNumber || 'None', 40, y);
-  renderKV('Serial Number', complaint.serialNumber || 'None', 200, y);
   const warrantyText = complaint.warrantyStatus === 'in_warranty'
     ? 'In Warranty'
     : complaint.warrantyStatus === 'out_of_warranty'
     ? 'Out of Warranty'
     : 'Unknown';
-  renderKV('Warranty Status', warrantyText, 360, y);
+
+  // Relative order: Phone Number -> Place -> Brand
+  renderKV('Customer Name', complaint.customerName, 40, y, 150);
+  renderKV('Phone Number', complaint.customerPhone, 200, y, 150);
+  renderKV('Place', complaint.area || 'N/A', 360, y, 195);
+  y += 30;
+
+  renderKV('Brand', brandName, 40, y, 150);
+  renderKV('Product Name', complaint.productName, 200, y, 150);
+  renderKV('Warranty Status', warrantyText, 360, y, 195);
+  y += 30;
+
+  renderKV('Alternate Phone', complaint.alternatePhone || 'None', 40, y, 150);
+  renderKV('Email', complaint.customerEmail || 'None', 200, y, 150);
+  renderKV('Address', complaint.customerAddress, 360, y, 195);
   y += 35;
 
-  // --- Complaint Details ---
-  y = renderSectionHeader('Complaint Information', y);
-  doc
-    .fontSize(9)
-    .font('Helvetica-Bold')
-    .fillColor(mutedTextColor)
-    .text('Subject:', 40, y);
-
-  doc
-    .fontSize(10)
-    .font('Helvetica-Bold')
-    .fillColor(darkTextColor)
-    .text(complaint.subject, 90, y, { width: 460 });
-
-  y += 20;
-
-  doc
-    .fontSize(9)
-    .font('Helvetica-Bold')
-    .fillColor(mutedTextColor)
-    .text('Detailed Description:', 40, y);
-  y += 14;
-
-  doc
-    .fontSize(9)
-    .font('Helvetica')
-    .fillColor(darkTextColor)
-    .text(complaint.description, 40, y, { width: 515, align: 'left' });
-
-  y += doc.heightOfString(complaint.description, { width: 515 }) + 15;
+  renderKV('Model Number', complaint.modelNumber || 'None', 40, y, 150);
+  renderKV('Serial Number', complaint.serialNumber || 'None', 200, y, 150);
+  renderKV('Purchase Date', complaint.purchaseDate ? formatKolkataDate(complaint.purchaseDate) : 'None', 360, y, 195);
+  y += 35;
 
   // --- Resolution Information (if any) ---
   if (complaint.resolution && (complaint.resolution.resolutionNotes || complaint.resolution.workPerformed || complaint.resolution.completedDate || ['Resolved', 'Closed'].includes(complaint.status))) {
@@ -241,9 +207,7 @@ export function generateComplaintPDF(complaint, imageBuffers = {}) {
     renderKV('Completion Date', complaint.resolution.completedDate ? formatKolkataDateTime(complaint.resolution.completedDate) : 'Not recorded', 360, y);
     y += 35;
 
-    const servicerDisplay = complaint.assignedServicer?.name || complaint.servicerNameSnapshot || 'Not recorded';
-    renderKV('Serviced By', servicerDisplay, 40, y);
-    renderKV('Recorded By', complaint.resolution.completedByName || 'Admin', 200, y);
+    renderKV('Recorded By', complaint.resolution.completedByName || 'Admin', 40, y);
     y += 35;
   }
 
@@ -321,6 +285,37 @@ export function generateComplaintPDF(complaint, imageBuffers = {}) {
     }
   }
 
+  // --- FINAL COMPLAINT-CONTENT BLOCK: Complaint Description ---
+  y = renderSectionHeader('Complaint Description', y);
+  doc
+    .fontSize(9)
+    .font('Helvetica-Bold')
+    .fillColor(mutedTextColor)
+    .text('Subject:', 40, y);
+
+  doc
+    .fontSize(10)
+    .font('Helvetica-Bold')
+    .fillColor(darkTextColor)
+    .text(complaint.subject || 'N/A', 90, y, { width: 460 });
+
+  y += 20;
+
+  doc
+    .fontSize(9)
+    .font('Helvetica-Bold')
+    .fillColor(mutedTextColor)
+    .text('Detailed Description:', 40, y);
+  y += 14;
+
+  doc
+    .fontSize(9)
+    .font('Helvetica')
+    .fillColor(darkTextColor)
+    .text(complaint.description || 'N/A', 40, y, { width: 515, align: 'left' });
+
+  y += doc.heightOfString(complaint.description || 'N/A', { width: 515 }) + 15;
+
   // --- Add Page Numbering on all buffered pages ---
   const range = doc.bufferedPageRange();
   for (let i = range.start; i < range.start + range.count; i++) {
@@ -362,32 +357,32 @@ export function generateComplaintReportPDF(complaints, filterSummary = {}) {
 
   // Printable width for landscape A4 = ~800, margin 20
   const defaultColWidths = {
-    num: 70,
-    date: 58,
-    customer: 75,
-    phone: 100,
+    num: 65,
+    date: 50,
+    customer: 70,
+    phone: 90,
+    place: 60,
     brand: 60,
-    category: 60,
-    product: 70,
-    area: 58,
-    rep: 70,
-    servicer: 72,
-    priority: 47,
-    status: 60,
+    product: 75,
+    shopName: 70,
+    rep: 65,
+    description: 195,
   };
 
   const completedColWidths = {
-    num: 70,
-    regDate: 55,
-    customer: 70,
-    phone: 100,
-    brandProduct: 80,
-    rep: 65,
-    servicer: 70,
-    compDate: 65,
-    charge: 60,
-    status: 50,
-    work: 115,
+    num: 55,
+    regDate: 45,
+    customer: 60,
+    phone: 80,
+    place: 50,
+    brand: 55,
+    product: 60,
+    shopName: 55,
+    rep: 55,
+    compDate: 50,
+    charge: 45,
+    work: 80,
+    description: 110,
   };
 
   const colWidths = isCompletedReport ? completedColWidths : defaultColWidths;
@@ -412,10 +407,8 @@ export function generateComplaintReportPDF(complaints, filterSummary = {}) {
   const filterParts = [];
   if (filterSummary.brandName) filterParts.push(`Brand: ${filterSummary.brandName}`);
   if (filterSummary.categoryName) filterParts.push(`Category: ${filterSummary.categoryName}`);
-  if (filterSummary.status) filterParts.push(`Status: ${filterSummary.status}`);
-  if (filterSummary.priority) filterParts.push(`Priority: ${filterSummary.priority}`);
-  if (filterSummary.area) filterParts.push(`Area: ${filterSummary.area}`);
-  if (filterSummary.servicerName) filterParts.push(`Servicer: ${filterSummary.servicerName}`);
+  if (filterSummary.area) filterParts.push(`Place: ${filterSummary.area}`);
+  if (filterSummary.shopName) filterParts.push(`Shop: ${filterSummary.shopName}`);
   if (filterSummary.representativeName) filterParts.push(`REP: ${filterSummary.representativeName}`);
   if (filterSummary.search) filterParts.push(`Search: "${filterSummary.search}"`);
   if (filterSummary.startDate || filterSummary.endDate) {
@@ -449,33 +442,36 @@ export function generateComplaintReportPDF(complaints, filterSummary = {}) {
     doc.fontSize(7.5).font('Helvetica-Bold').fillColor(primaryColor);
     let x = 23;
 
+    // Relative order: Phone Number -> Place -> Brand
+    // Relative order: Shop Name -> REP
+    // Description is the last column
     const cols = isCompletedReport
       ? [
           { text: 'Complaint ID', width: colWidths.num },
           { text: 'Reg Date', width: colWidths.regDate },
           { text: 'Customer', width: colWidths.customer },
-          { text: 'Phone / Alt', width: colWidths.phone },
-          { text: 'Brand / Product', width: colWidths.brandProduct },
+          { text: 'Phone Number', width: colWidths.phone },
+          { text: 'Place', width: colWidths.place },
+          { text: 'Brand', width: colWidths.brand },
+          { text: 'Product', width: colWidths.product },
+          { text: 'Shop Name', width: colWidths.shopName },
           { text: 'REP', width: colWidths.rep },
-          { text: 'Serviced By', width: colWidths.servicer },
           { text: 'Completion Date', width: colWidths.compDate },
           { text: 'Charge (INR)', width: colWidths.charge },
-          { text: 'Status', width: colWidths.status },
           { text: 'Work Performed', width: colWidths.work },
+          { text: 'Description', width: colWidths.description },
         ]
       : [
           { text: 'Complaint ID', width: colWidths.num },
           { text: 'Date', width: colWidths.date },
           { text: 'Customer', width: colWidths.customer },
-          { text: 'Phone / Alt', width: colWidths.phone },
+          { text: 'Phone Number', width: colWidths.phone },
+          { text: 'Place', width: colWidths.place },
           { text: 'Brand', width: colWidths.brand },
-          { text: 'Category', width: colWidths.category },
           { text: 'Product', width: colWidths.product },
-          { text: 'Area', width: colWidths.area },
+          { text: 'Shop Name', width: colWidths.shopName },
           { text: 'REP', width: colWidths.rep },
-          { text: 'Servicer', width: colWidths.servicer },
-          { text: 'Priority', width: colWidths.priority },
-          { text: 'Status', width: colWidths.status },
+          { text: 'Description', width: colWidths.description },
         ];
 
     for (const c of cols) {
@@ -498,51 +494,40 @@ export function generateComplaintReportPDF(complaints, filterSummary = {}) {
     for (let i = 0; i < complaints.length; i++) {
       const c = complaints[i];
 
-      // Check if new page is needed
-      if (curY > 540) {
-        doc.addPage();
-        curY = 25;
-        curY = renderTableHeader(curY);
-      }
+      doc.fontSize(7).font('Helvetica');
 
-      // Alternating row background
-      if (i % 2 === 1) {
-        doc.rect(20, curY, tableWidth, 17).fill('#f8fafc');
-      }
-      doc.rect(20, curY, tableWidth, 17).stroke('#e2e8f0');
-
-      doc.fontSize(7).font('Helvetica').fillColor(darkTextColor);
-      let x = 23;
-
-      const servicerDisplay = c.assignedServicer?.name || c.servicerNameSnapshot || 'Unassigned';
-      const repDisplay = c.representative?.name || c.representativeNameSnapshot || 'Not assigned';
-      const brandDisplay = c.brand?.name || c.brandNameSnapshot || 'Not assigned';
-      const categoryDisplay = c.category?.name || c.categoryNameSnapshot || 'Not assigned';
+      const repDisplay = c.representative?.name || c.representativeNameSnapshot || '-';
+      const brandDisplay = c.brand?.name || c.brandNameSnapshot || '-';
       const phoneDisplay = c.alternatePhone
         ? `${c.customerPhone} / ${c.alternatePhone}`
         : (c.customerPhone || '-');
+      const placeDisplay = c.area || '-';
+      const shopDisplay = c.shopName || '-';
+      const descDisplay = c.description || '-';
 
       let rowValues = [];
+      let workStr = '-';
       if (isCompletedReport) {
         const compDateStr = c.resolution?.completedDate ? formatKolkataDate(c.resolution.completedDate) : 'Not recorded';
         const chargeNum = c.resolution?.serviceCharge !== undefined && c.resolution?.serviceCharge !== null
           ? Number(c.resolution.serviceCharge)
           : 0;
-        const workStr = c.resolution?.workPerformed || c.resolution?.resolutionNotes || 'Completed';
-        const statusLabel = c.status === 'Resolved' ? 'Completed' : c.status;
+        workStr = c.resolution?.workPerformed || c.resolution?.resolutionNotes || '-';
 
         rowValues = [
           { text: c.complaintNumber, width: colWidths.num, bold: true },
           { text: formatKolkataDate(c.complaintDate), width: colWidths.regDate },
           { text: c.customerName, width: colWidths.customer },
           { text: phoneDisplay, width: colWidths.phone },
-          { text: `${brandDisplay} - ${c.productName}`, width: colWidths.brandProduct },
+          { text: placeDisplay, width: colWidths.place },
+          { text: brandDisplay, width: colWidths.brand },
+          { text: c.productName, width: colWidths.product },
+          { text: shopDisplay, width: colWidths.shopName },
           { text: repDisplay, width: colWidths.rep },
-          { text: servicerDisplay, width: colWidths.servicer },
           { text: compDateStr, width: colWidths.compDate },
           { text: chargeNum.toFixed(2), width: colWidths.charge },
-          { text: statusLabel, width: colWidths.status },
-          { text: workStr, width: colWidths.work },
+          { text: workStr, width: colWidths.work, isMultiLine: true },
+          { text: descDisplay, width: colWidths.description, isMultiLine: true },
         ];
       } else {
         rowValues = [
@@ -550,30 +535,60 @@ export function generateComplaintReportPDF(complaints, filterSummary = {}) {
           { text: formatKolkataDate(c.complaintDate), width: colWidths.date },
           { text: c.customerName, width: colWidths.customer },
           { text: phoneDisplay, width: colWidths.phone },
+          { text: placeDisplay, width: colWidths.place },
           { text: brandDisplay, width: colWidths.brand },
-          { text: categoryDisplay, width: colWidths.category },
           { text: c.productName, width: colWidths.product },
-          { text: c.area, width: colWidths.area },
+          { text: shopDisplay, width: colWidths.shopName },
           { text: repDisplay, width: colWidths.rep },
-          { text: servicerDisplay, width: colWidths.servicer },
-          { text: (c.priority || '').toUpperCase(), width: colWidths.priority },
-          { text: c.status, width: colWidths.status },
+          { text: descDisplay, width: colWidths.description, isMultiLine: true },
         ];
       }
+
+      // Calculate dynamic row height based on multiline description (and work performed)
+      const descHeight = doc.heightOfString(descDisplay, { width: colWidths.description - 6, lineBreak: true });
+      let rowHeight = Math.max(17, descHeight + 6);
+      if (isCompletedReport && workStr !== '-') {
+        const workHeight = doc.heightOfString(workStr, { width: colWidths.work - 6, lineBreak: true });
+        rowHeight = Math.max(rowHeight, workHeight + 6);
+      }
+      rowHeight = Math.min(rowHeight, 480);
+
+      // Check if new page is needed
+      if (curY + rowHeight > 545) {
+        doc.addPage();
+        curY = 25;
+        curY = renderTableHeader(curY);
+      }
+
+      // Alternating row background
+      if (i % 2 === 1) {
+        doc.rect(20, curY, tableWidth, rowHeight).fill('#f8fafc');
+      }
+      doc.rect(20, curY, tableWidth, rowHeight).stroke('#e2e8f0');
+
+      doc.fontSize(7).font('Helvetica').fillColor(darkTextColor);
+      let x = 23;
 
       for (const val of rowValues) {
         if (val.bold) doc.font('Helvetica-Bold');
         else doc.font('Helvetica');
 
-        doc.text(val.text || '-', x, curY + 5, {
-          width: val.width - 4,
-          lineBreak: false,
-          ellipsis: true,
-        });
+        if (val.isMultiLine) {
+          doc.text(val.text || '-', x, curY + 4, {
+            width: val.width - 4,
+            lineBreak: true,
+          });
+        } else {
+          doc.text(val.text || '-', x, curY + 4, {
+            width: val.width - 4,
+            lineBreak: false,
+            ellipsis: true,
+          });
+        }
         x += val.width;
       }
 
-      curY += 17;
+      curY += rowHeight;
     }
   }
 

@@ -261,6 +261,12 @@ const complaintSchema = new mongoose.Schema({
     type: String,
     default: '',
   },
+  shopName: {
+    type: String,
+    trim: true,
+    default: '',
+    maxlength: 150,
+  },
   representative: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Representative',
